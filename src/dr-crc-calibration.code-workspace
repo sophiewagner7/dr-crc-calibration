@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"material-icon-theme.folders.associations": {
+			"reference": "docs",
+			"modeling": "generator"
+		  }
+	}
+}
