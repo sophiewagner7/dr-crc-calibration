@@ -1,3 +1,5 @@
 # Pycache
 __pycache__/
 
+# Malwarebytes logs (monitoring)
+%localappdata%/Malwarebytes/Logs/
