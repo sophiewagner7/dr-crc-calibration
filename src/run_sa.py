@@ -1,0 +1,77 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt  # For visualizations
+from csaps import csaps  # https://csaps.readthedocs.io/en/latest/
+import common_functions as func
+import configs as c
+import markov as m
+import gof
+import calibration_plots as p
+from datetime import datetime
+from calibration_interp import simulated_annealing as interp_anneal
+from calibration_lin_log import simulated_annealing as lin_log_anneal
+
+
+def lin_log(n_iterations=2000, step_size=0.1, n_adj=21, verbose=True):
+
+    result = lin_log_anneal(
+        n_iterations=n_iterations, step_size=step_size, n_adj=n_adj, verbose=verbose
+    )
+
+    # Generate the current timestamp in the format YYYYMMDD_HHMMSS
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+
+    curr_pmat, curr_tmat = result[0].copy(), result[1].copy()
+    curr_log = m.run_markov_new(curr_tmat)
+    log_adj, log_prev, log_pop, log_inc = curr_log
+
+    # Save the with the timestamp in the filenames
+    np.save(f"../out/log_lin/tmats/tmat_us_{timestamp}.npy", curr_tmat)
+    pd.DataFrame(curr_pmat).to_csv(f"../out/log_lin/pmats/pmat_us_{timestamp}.csv")
+    pd.DataFrame(log_adj).to_csv(f"../out/log_lin/logs/adj_inc/log_adj{timestamp}.csv")
+    pd.DataFrame(log_prev).to_csv(f"../out/log_lin/logs/prev/log_prev{timestamp}.csv")
+    pd.DataFrame(log_pop).to_csv(f"../out/log_lin/logs/pop/log_pop{timestamp}.csv")
+    pd.DataFrame(log_inc).to_csv(
+        f"../out/log_lin/logs/unadj_inc/log_inc{timestamp}.csv"
+    )
+
+    # Extract transition probabilities
+    transition_probs = p.extract_transition_probs(
+        curr_tmat, c.health_states, c.desired_transitions
+    )
+    p.print_trans_probs(transition_probs)
+
+    p.plot_vs_seer(curr_log, c.seer_inc)
+    p.plot_vs_seer_total(curr_log, c.seer_inc)
+
+
+def interp(n_iterations=2000, step_size=0.1, n_adj=21, verbose=True):
+
+    result = interp_anneal(
+        n_iterations=n_iterations, step_size=step_size, n_adj=n_adj, verbose=verbose
+    )
+    # Generate the current timestamp in the format YYYYMMDD_HHMMSS
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+
+    curr_tmat = result.copy()
+    curr_log = m.run_markov_new(curr_tmat)
+    log_adj, log_prev, log_pop, log_inc = curr_log
+
+    # Save the with the timestamp in the filenames
+    np.save(f"../out/interp/tmats/tmat_us_{timestamp}.npy", curr_tmat)
+    pd.DataFrame(log_adj).to_csv(f"../out/interp/logs/adj_inc/log_adj{timestamp}.csv")
+    pd.DataFrame(log_prev).to_csv(f"../out/interp/logs/prev/log_prev{timestamp}.csv")
+    pd.DataFrame(log_pop).to_csv(f"../out/interp/logs/pop/log_pop{timestamp}.csv")
+    pd.DataFrame(log_inc).to_csv(f"../out/interp/logs/unadj_inc/log_inc{timestamp}.csv")
+
+    # Extract transition probabilities
+    transition_probs = p.extract_transition_probs(
+        curr_tmat, c.health_states, c.desired_transitions
+    )
+    p.print_trans_probs(transition_probs)
+
+    p.plot_vs_seer(curr_log, c.seer_inc)
+    p.plot_vs_seer_total(curr_log, c.seer_inc)
+
+
+interp()

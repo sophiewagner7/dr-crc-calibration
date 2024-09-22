@@ -37,9 +37,23 @@ acm_states = [10, 12, 12, 13, 13, 13, 11, 11, 11]
 
 # Transition points
 points = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (3, 6), (4, 7), (5, 8)]
+desired_transitions = [
+    ("healthy", "LR_polyp"),
+    ("LR_polyp", "HR_polyp"),
+    ("HR_polyp", "u_CRC_loc"),
+    ("u_CRC_loc", "u_CRC_reg"),
+    ("u_CRC_reg", "u_CRC_dis"),
+    ("u_CRC_loc", "d_CRC_loc"),
+    ("u_CRC_reg", "d_CRC_reg"),
+    ("u_CRC_dis", "d_CRC_dis"),
+]
+points_linear = [(1, 2), (2, 3), (3, 4), (4, 5), (3, 6), (4, 7), (5, 8)]
+points_logis = [(0, 1)]
+idx_linear = np.arange(1, 8)
+idx_logis = np.array([1])
 
 # Age indices for the model
-ages = np.arange(0, 80, 1)
+age_layers = np.arange(0, 80, 1)
 
 # Initial population state
 starting_pop = np.zeros((len(health_states), 1))
@@ -82,8 +96,12 @@ csd_rate = pd.DataFrame(csd_interp).apply(lambda col: func.probtoprob(col)).to_n
 # Calibration Targets
 # Target 1: SEER Incidence
 seer_inc = pd.read_excel("../data/incidence_crude.xlsx", sheet_name="1975-1990 Adj")
-seer_inc = seer_inc[seer_inc["Age"] >= 20].reset_index()  # single ages, 20-84 (65 ages)
-seer_inc = seer_inc[seer_inc["Age"] <= 84].reset_index()  # starting age 20, 65 ages
+seer_inc = seer_inc[
+    seer_inc["Age"] >= 20
+].reset_index()  # single age_layers, 20-84 (65 age_layers)
+seer_inc = seer_inc[
+    seer_inc["Age"] <= 84
+].reset_index()  # starting age 20, 65 age_layers
 
 # Target 2: Polyp prevalence
 polyp_prev = pd.read_excel("../data/polyp_targets.xlsx", sheet_name="Sheet1")

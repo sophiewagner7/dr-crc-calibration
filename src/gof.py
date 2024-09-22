@@ -8,9 +8,9 @@ def objective(log, i):
     score = 0
 
     # Yearly incidence penalty (20-84)
-    score += np.square(inc[6, :65] - c.seer_inc["Local Rate"]).sum()
-    score += np.square(inc[7, :65] - c.seer_inc["Regional Rate"]).sum()
-    score += np.square(inc[8, :65] - c.seer_inc["Distant Rate"]).sum()
+    score += 2 * np.square(inc[6, :65] - c.seer_inc["Local Rate"]).sum()
+    score += 2 * np.square(inc[7, :65] - c.seer_inc["Regional Rate"]).sum()
+    score += 2 * np.square(inc[8, :65] - c.seer_inc["Distant Rate"]).sum()
 
     # Polyp prevalence penalty (pooled)
     score += (1 / np.sqrt(35656)) * np.square(
@@ -21,7 +21,7 @@ def objective(log, i):
     )  # uCRC
 
     # Penalty to ensure plateau
-    post_80_inc = inc[6:9, 60:]  # Age 80+
-    score += np.sum(np.square(np.diff(post_80_inc, axis=0)))
+    post_80_inc = np.sum(inc[6:9, 60:], axis=0)  # Age 80+
+    score += 0.5 * np.sum(np.square(np.diff(post_80_inc)))
 
     return score
