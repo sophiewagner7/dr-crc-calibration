@@ -167,7 +167,7 @@ def plot_vs_seer_total(
 ):
     inc_adj, _, _, _ = curr_log
     x_values = np.linspace(20, 99, 80)
-    seer_inc["Total Rate"] = (
+    seer_inc.loc[:, "Total Rate"] = (
         seer_inc["Local Rate"] + seer_inc["Regional Rate"] + seer_inc["Distant Rate"]
     )
 

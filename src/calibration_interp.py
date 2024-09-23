@@ -5,6 +5,7 @@ import common_functions as func
 import markov as m
 import gof 
 import calibration_plots as p
+from tqdm import tqdm
 
 
 def row_normalize(matrix):
@@ -134,45 +135,48 @@ def simulated_annealing(n_iterations, step_size, start_tmat=None, n_adj=7, verbo
     curr_t, curr_eval = best_t, best_eval  # current working solution
     ticker = 0
     
-    for i in range(n_iterations):  
-        #if ticker >= 25000: break
+    with tqdm(total=n_iterations, desc="Simulated annealing progress", unit="iteration") as pbar:
+        for i in range(n_iterations):  
+            #if ticker >= 25000: break
 
-        # Run model 
-        candidate_t = np.copy(curr_t)
-        candidate_t = step(candidate_t, step_size, n_adj)
-        candidate_log = m.run_markov_new(candidate_t)
-        candidate_eval = gof.objective(candidate_log,i)  # Evaluate candidate point
- 
-        # Update "best" if better than candidate
-        if candidate_eval < best_eval:
-            ticker = 0
-            best_t, best_eval = np.copy(candidate_t), np.copy(candidate_eval) 
-            best_log = m.run_markov_new(best_t)
+            # Run model 
+            candidate_t = np.copy(curr_t)
+            candidate_t = step(candidate_t, step_size, n_adj)
+            candidate_log = m.run_markov_new(candidate_t)
+            candidate_eval = gof.objective(candidate_log,i)  # Evaluate candidate point
+    
+            # Update "best" if better than candidate
+            if candidate_eval < best_eval:
+                ticker = 0
+                best_t, best_eval = np.copy(candidate_t), np.copy(candidate_eval) 
+                best_log = m.run_markov_new(best_t)
 
-        else: 
-            ticker += 1
+            else: 
+                ticker += 1
 
-        # t = 10 / float(i+1)  # calculate temperature for current epoch
-        t = 1 /(1+np.log(i+1))
+            # t = 10 / float(i+1)  # calculate temperature for current epoch
+            t = 1 /(1+np.log(i+1))
 
-        # Progress report
-        if verbose and i%500==0:
-            inc_log=best_log[3]
-            total_dxd=np.sum(inc_log[6:9,:])/c.N 
-            print(i, ": ", best_eval,"   CRC: ", round(total_dxd,5), "   tick:", ticker)
-            if i%5000==0:
-                transition_probs = p.extract_transition_probs(
-                    best_t, c.health_states, c.desired_transitions
-                )
-                print(f"Progress report, i = {i}")
-                p.print_trans_probs(transition_probs)
-           
-        # Check if we should update "curr"
-        diff = candidate_eval - curr_eval  # difference between candidate and current point evaluation
-        metropolis = np.exp(-diff / t)  # calculate metropolis acceptance criterion        
-        if diff < 0 or np.random.random() < metropolis:  # check if we should keep the new point
-            curr_t, curr_eval = np.copy(candidate_t), np.copy(candidate_eval) # store the new current point
-            ticker = 0
-        
+            # Progress report
+            if verbose and i%1000==0:
+                inc_log=best_log[3]
+                total_dxd=np.sum(inc_log[6:9,:])/c.N 
+                print(i, ": ", best_eval,"   CRC: ", round(total_dxd,5), "   tick:", ticker)
+                if i%10000==0:
+                    transition_probs = p.extract_transition_probs(
+                        best_t, c.health_states, c.desired_transitions
+                    )
+                    print(f"Progress report, i = {i}")
+                    p.print_trans_probs(transition_probs)
+            
+            # Check if we should update "curr"
+            diff = candidate_eval - curr_eval  # difference between candidate and current point evaluation
+            metropolis = np.exp(-diff / t)  # calculate metropolis acceptance criterion        
+            if diff < 0 or np.random.random() < metropolis:  # check if we should keep the new point
+                curr_t, curr_eval = np.copy(candidate_t), np.copy(candidate_eval) # store the new current point
+                ticker = 0
+
+            pbar.update(1)
+            
     print(best_eval)   
     return best_t

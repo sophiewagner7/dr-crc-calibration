@@ -16,8 +16,8 @@ screen_end = 75
 surveil_end = 85
 
 OUTPUT_PATHS = {
-    "interp": "../out/{model_version}/interp/",
-    "lin_log": "../out/{model_version}/log_lin/",
+    "interp": f"../out/{model_version}/interp/",
+    "lin_log": f"../out/{model_version}/log_lin/",
 }
 
 # State Structure
@@ -147,15 +147,16 @@ elif model_version == "DR":
 
     ### Calibration Targets
     # Target 1: SEER Incidence
-    dr_inc = pd.read_excel("../data/incidence_crude.xlsx", sheet_name="1975-1990 Adj")
-    dr_inc = dr_inc[dr_inc["Age"] >= 20].reset_index()  # single ages, 20-84 (65 ages)
-    dr_inc = dr_inc[dr_inc["Age"] <= 84].reset_index()  # starting age 20, 65 ages
+    # dr_inc = pd.read_excel("../data/incidence_crude.xlsx", sheet_name="1975-1990 Adj")
+    # dr_inc = dr_inc[dr_inc["Age"] >= 20].reset_index()  # single ages, 20-84 (65 ages)
+    # dr_inc = dr_inc[dr_inc["Age"] <= 84].reset_index()  # starting age 20, 65 ages
     dr_inc = pd.read_excel(
-        "data/incidence_dr_globocan.xlsx", sheet_name="DR incidence factor"
+        "../data/incidence_dr_globocan.xlsx", sheet_name="DR incidence factor"
     )  # US rate by stage * DR factor (per age)
-    dr_inc = dr_inc.iloc[:65, :]
+    seer_inc = dr_inc.iloc[:65, :]
 
     # Target 2: Polyp prevalence
     polyp_prev = pd.read_excel("../data/polyp_targets.xlsx", sheet_name="Sheet1")
     polyp_targets = polyp_prev["Value"].to_numpy()  # uCRC, polyp, uCRC + polyp
     dr_factor_flat = 0.416391039
+    polyp_targets *= dr_factor_flat

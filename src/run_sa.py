@@ -73,6 +73,7 @@ def interp(
         curr_tmat, c.health_states, c.desired_transitions
     )
 
+    # Saving
     if save_all:
         # Save the with the timestamp in the filenames
         output_dir = c.OUTPUT_PATHS["interp"]
@@ -112,8 +113,13 @@ def interp(
     else:
         p.print_trans_probs(transition_probs)
         p.plot_tps(curr_tmat)
-        p.plot_vs_seer(curr_log)
-        p.plot_vs_seer_total(curr_log)
+        p.plot_vs_seer(curr_log, c.seer_inc)
+        p.plot_vs_seer_total(curr_log, c.seer_inc)
 
 
-interp(100, 0.05, save_all=False)
+interp(
+    100000,
+    0.05,
+    start_tmat=np.load("../out/DR/interp/tmats/20240923_0611_tmat.npy"),
+    save_all=True,
+)

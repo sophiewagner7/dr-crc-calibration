@@ -5,8 +5,12 @@ library(dplyr)
 library(tidyr)
 library(ggridges)
 
+timestamp <- "20240923_0611"
+model_version <-"DR"
+
 # Read the population data and transpose
-pop <- read.csv("out\\interp\\logs\\pop\\log_pop20240922_2109.csv")
+file_path <- paste0("out/", model_version, "/interp/logs/", timestamp, "_pop.csv")
+pop <- read.csv(file_path)
 pop_t <- t(pop)[-1, ]  # Transpose and drop the first row
 pop_t <- as.data.frame(pop_t)
 
@@ -20,11 +24,6 @@ pop_yr <- pop_t |>
   mutate(Year = rep(1:(n()/12), each = 12)) |>  # Rename group to Year
   group_by(Year) |>  
   summarize(across(everything(), ~ mean(.x, na.rm = TRUE)))  # Compute group means
-
-# Quick plot for Healthy state
-ggplot(pop_yr, aes(x = Year, y = Healthy)) +
-  geom_line(color = "red") +
-  geom_area(fill = "red", alpha = 0.4)
 
 # Calculate the total ACM
 pop_yr$ACM <- pop_yr$healthy_ACM + pop_yr$cancer_ACM + pop_yr$polyp_ACM + pop_yr$uCRC_ACM
@@ -47,4 +46,4 @@ plot <- ggplot(pop_yr_long, aes(x = Year, y = perc, color = Health_State)) +
   labs(title = "Overlaid Health States with Areas and Lines", x = "Year", y = "Prevalence")
 
 # Save the plot
-ggsave("out/interp/plots/20240922_2109_health_states.png", plot = plot, width = 12, height = 8)
+ggsave(paste0("out/", model_version, "/interp/plots/", timestamp, "_health_states.png"), plot = plot, width = 12, height = 8)
