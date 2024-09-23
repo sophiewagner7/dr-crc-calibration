@@ -5,8 +5,8 @@ library(dplyr)
 library(tidyr)
 library(ggridges)
 
-timestamp <- "20240923_0611"
-model_version <-"DR"
+timestamp <- "20240923_1243"
+model_version <-"US"
 
 # Read the population data and transpose
 file_path <- paste0("out/", model_version, "/interp/logs/", timestamp, "_pop.csv")
@@ -41,7 +41,7 @@ pop_yr_long$perc <- pop_yr_long$Value / 100000
 
 # Create the final plot of all health states
 plot <- ggplot(pop_yr_long, aes(x = Year, y = perc, color = Health_State)) +
-  geom_line(size = 1) +   # Plot lines for each health state
+  geom_line(linewidth = 1) +   # Plot lines for each health state
   theme_bw() +
   labs(title = "Overlaid Health States with Areas and Lines", x = "Year", y = "Prevalence")
 
