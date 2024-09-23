@@ -8,7 +8,7 @@ starting_age = 20
 max_age = 100
 N = 100000  # Size of sample populations
 model_type = "interp"  # linear, logis_all, logis_healthy_lr, logis_linear
-model_version = "DR"  # US, DR
+model_version = "US"  # US, DR
 
 # Global strategy parameters
 screen_start = 45
