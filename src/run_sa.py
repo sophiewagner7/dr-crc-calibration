@@ -45,7 +45,14 @@ def lin_log(n_iterations=2000, step_size=0.1, n_adj=21, verbose=True):
     p.plot_vs_seer_total(curr_log, c.seer_inc)
 
 
-def interp(n_iterations=100000, step_size=0.1, start_tmat=None, n_adj=33, verbose=True):
+def interp(
+    n_iterations=100000,
+    step_size=0.1,
+    start_tmat=None,
+    n_adj=33,
+    verbose=True,
+    save_all=True,
+):
 
     result = interp_anneal(
         n_iterations=n_iterations,
@@ -61,21 +68,52 @@ def interp(n_iterations=100000, step_size=0.1, start_tmat=None, n_adj=33, verbos
     curr_log = m.run_markov_new(curr_tmat)
     log_adj, log_prev, log_pop, log_inc = curr_log
 
-    # Save the with the timestamp in the filenames
-    np.save(f"../out/interp/tmats/tmat_us_{timestamp}.npy", curr_tmat)
-    pd.DataFrame(log_adj).to_csv(f"../out/interp/logs/adj_inc/log_adj{timestamp}.csv")
-    pd.DataFrame(log_prev).to_csv(f"../out/interp/logs/prev/log_prev{timestamp}.csv")
-    pd.DataFrame(log_pop).to_csv(f"../out/interp/logs/pop/log_pop{timestamp}.csv")
-    pd.DataFrame(log_inc).to_csv(f"../out/interp/logs/unadj_inc/log_inc{timestamp}.csv")
-
     # Extract transition probabilities
     transition_probs = p.extract_transition_probs(
         curr_tmat, c.health_states, c.desired_transitions
     )
-    p.print_trans_probs(transition_probs)
 
-    p.plot_vs_seer(curr_log, c.seer_inc)
-    p.plot_vs_seer_total(curr_log, c.seer_inc)
+    if save_all:
+        # Save the with the timestamp in the filenames
+        output_dir = c.OUTPUT_PATHS["interp"]
+        np.save(f"{output_dir}/tmats/{timestamp}_tmat.npy", curr_tmat)
+        pd.DataFrame(log_adj).to_csv(f"{output_dir}/logs/{timestamp}_inc_adj.csv")
+        pd.DataFrame(log_prev).to_csv(f"{output_dir}/logs/{timestamp}_prev.csv")
+        pd.DataFrame(log_pop).to_csv(f"{output_dir}/logs/{timestamp}_pop.csv")
+        pd.DataFrame(log_inc).to_csv(f"{output_dir}/logs/{timestamp}_inc_unadj.csv")
+
+        p.print_trans_probs(
+            transition_probs,
+            save_imgs=True,
+            outpath=f"{output_dir}/probs/",
+            timestamp=timestamp,
+        )
+        p.plot_tps(
+            curr_tmat,
+            save_imgs=True,
+            outpath=f"{output_dir}/plots",
+            timestamp=timestamp,
+        )
+        p.plot_vs_seer(
+            curr_log,
+            c.seer_inc,
+            save_imgs=True,
+            outpath=f"{output_dir}/plots",
+            timestamp=timestamp,
+        )
+        p.plot_vs_seer_total(
+            curr_log,
+            c.seer_inc,
+            save_imgs=True,
+            outpath=f"{output_dir}/plots",
+            timestamp=timestamp,
+        )
+
+    else:
+        p.print_trans_probs(transition_probs)
+        p.plot_tps(curr_tmat)
+        p.plot_vs_seer(curr_log)
+        p.plot_vs_seer_total(curr_log)
 
 
-interp(250000, 0.05)
+interp(100, 0.05, save_all=False)
