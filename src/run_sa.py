@@ -45,10 +45,14 @@ def lin_log(n_iterations=2000, step_size=0.1, n_adj=21, verbose=True):
     p.plot_vs_seer_total(curr_log, c.seer_inc)
 
 
-def interp(n_iterations=2000, step_size=0.1, n_adj=21, verbose=True):
+def interp(n_iterations=100000, step_size=0.1, start_tmat=None, n_adj=33, verbose=True):
 
     result = interp_anneal(
-        n_iterations=n_iterations, step_size=step_size, n_adj=n_adj, verbose=verbose
+        n_iterations=n_iterations,
+        step_size=step_size,
+        start_tmat=start_tmat,
+        n_adj=n_adj,
+        verbose=verbose,
     )
     # Generate the current timestamp in the format YYYYMMDD_HHMMSS
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
@@ -74,4 +78,4 @@ def interp(n_iterations=2000, step_size=0.1, n_adj=21, verbose=True):
     p.plot_vs_seer_total(curr_log, c.seer_inc)
 
 
-interp()
+interp(250000, 0.05)

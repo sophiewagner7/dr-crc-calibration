@@ -48,7 +48,7 @@ def create_matrix(params=None):
 
 
 def constrain_matrix(matrix):
-    matrix = np.clip(matrix,0.0,0.6)
+    matrix = np.clip(matrix,0.0,0.5)
    
     # Progression Block
     matrix[:,0,1] = np.maximum(0.000001, matrix[:,0,1])  # not below 0
@@ -86,8 +86,8 @@ def add_csd(matrix):
 
 def interp_matrix(matrix):
     
-    age_mids = np.arange(0, 65)  # Age midpoints for interpolation up to 85
-    age_mids = np.append(age_mids, 100) # Add 100 to anchor the extrapolation
+    # age_mids = np.arange(0, 65)  # Age midpoints for interpolation up to 85
+    # age_mids = np.append(age_mids, 100) # Add 100 to anchor the extrapolation
     all_ages = c.age_layers # Full range of age_layers
     interp_points = c.points # Exclude first transition from interpolation
   
@@ -95,9 +95,9 @@ def interp_matrix(matrix):
         """ Interpolate based on parameters up to age 85
             Anchor based on the mean of these parameter values
         """
-        under_85 = matrix[:65, from_state, to_state]  # Extract transition probs up to age 85
-        anchored = np.append(under_85, np.mean(under_85))  # Append mean to age 100
-        tsmooth_spline = csaps(age_mids, anchored, smooth=.01)  
+        # under_85 = matrix[:65, from_state, to_state]  # Extract transition probs up to age 85
+        # anchored = np.append(under_85, np.mean(under_85))  # Append mean to age 100
+        tsmooth_spline = csaps(all_ages, matrix[:,from_state, to_state], smooth=.001)  
         matrix[:,from_state,to_state] = tsmooth_spline(all_ages).clip(0.000001, 0.4)
 
     return matrix
@@ -109,7 +109,9 @@ def step(matrix, step_size, num_adj=21):
     step_age = np.random.choice(len(c.age_layers), size = num_adj, replace=True)
 
     for i in range(num_adj):
-        new_matrix[step_age[i], c.points[step_mat[i]][0], c.points[step_mat[i]][1]] += np.random.uniform(low=-step_size, high=step_size)
+        from_state, to_state = c.points[step_mat[i]][0], c.points[step_mat[i]][1]
+        step_param = np.mean(matrix[:,from_state, to_state]) * step_size
+        new_matrix[step_age[i], from_state, to_state] += np.random.uniform(low=-step_param, high=step_param)
    
     new_matrix = constrain_matrix(new_matrix)
     new_matrix = interp_matrix(new_matrix)
@@ -133,7 +135,7 @@ def simulated_annealing(n_iterations, step_size, start_tmat=None, n_adj=7, verbo
     ticker = 0
     
     for i in range(n_iterations):  
-        if ticker >= 10000: break
+        #if ticker >= 25000: break
 
         # Run model 
         candidate_t = np.copy(curr_t)
@@ -157,7 +159,7 @@ def simulated_annealing(n_iterations, step_size, start_tmat=None, n_adj=7, verbo
         if verbose and i%500==0:
             inc_log=best_log[3]
             total_dxd=np.sum(inc_log[6:9,:])/c.N 
-            print(i, ": ", best_eval,"   CRC: ", round(total_dxd,5))
+            print(i, ": ", best_eval,"   CRC: ", round(total_dxd,5), "   tick:", ticker)
             if i%5000==0:
                 transition_probs = p.extract_transition_probs(
                     best_t, c.health_states, c.desired_transitions
@@ -170,6 +172,7 @@ def simulated_annealing(n_iterations, step_size, start_tmat=None, n_adj=7, verbo
         metropolis = np.exp(-diff / t)  # calculate metropolis acceptance criterion        
         if diff < 0 or np.random.random() < metropolis:  # check if we should keep the new point
             curr_t, curr_eval = np.copy(candidate_t), np.copy(candidate_eval) # store the new current point
+            ticker = 0
         
-    print(best_eval)
+    print(best_eval)   
     return best_t
