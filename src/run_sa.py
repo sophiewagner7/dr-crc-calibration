@@ -117,4 +117,9 @@ def interp(
         p.plot_vs_seer_total(curr_log, c.seer_inc)
 
 
-interp(100000, 0.5, save_all=True)
+interp(
+    10000,
+    0.5,
+    start_tmat=np.load("../out/US/interp/tmats/20240923_1243_tmat.npy"),
+    save_all=True,
+)

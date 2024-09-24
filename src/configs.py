@@ -8,7 +8,7 @@ starting_age = 20
 max_age = 100
 N = 100000  # Size of sample populations
 model_type = "interp"  # linear, logis_all, logis_healthy_lr, logis_linear
-model_version = "US"  # US, DR
+model_version = "DR"  # US, DR
 
 # Global strategy parameters
 screen_start = 45
@@ -150,10 +150,32 @@ elif model_version == "DR":
     # dr_inc = pd.read_excel("../data/incidence_crude.xlsx", sheet_name="1975-1990 Adj")
     # dr_inc = dr_inc[dr_inc["Age"] >= 20].reset_index()  # single ages, 20-84 (65 ages)
     # dr_inc = dr_inc[dr_inc["Age"] <= 84].reset_index()  # starting age 20, 65 ages
-    dr_inc = pd.read_excel(
-        "../data/incidence_dr_globocan.xlsx", sheet_name="DR incidence factor"
-    )  # US rate by stage * DR factor (per age)
-    seer_inc = dr_inc.iloc[:65, :]
+    # dr_inc = pd.read_excel(
+    #     "../data/incidence_dr_globocan.xlsx", sheet_name="DR incidence factor"
+    # )  # US rate by stage * DR factor (per age)
+    # seer_inc = dr_inc.iloc[:65, :]
+
+    # Yearly cancer incidence
+    dr_inc = pd.read_csv("../data/dr_inc_splined.csv")["Rate"]
+
+    # Stage distribution (proportion of total, HGPS)
+    dr_stage_dist = pd.read_excel(
+        "../data/incidence_dr_globocan.xlsx", sheet_name="HGPS Stage"
+    )["Percent"]
+
+    # Structure like so for plotting
+    stage_rates = dr_inc.values[:, np.newaxis] * dr_stage_dist.values
+
+    # Create the DataFrame directly using the calculated stage rates
+    seer_inc = pd.DataFrame(
+        {
+            "Age": np.arange(20, 85),
+            "Local Rate": stage_rates[:, 0],
+            "Regional Rate": stage_rates[:, 1],
+            "Distant Rate": stage_rates[:, 2],
+            "Total Rate": dr_inc,
+        }
+    )
 
     # Target 2: Polyp prevalence
     polyp_prev = pd.read_excel("../data/polyp_targets.xlsx", sheet_name="Sheet1")

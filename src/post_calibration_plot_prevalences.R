@@ -5,8 +5,8 @@ library(dplyr)
 library(tidyr)
 library(ggridges)
 
-timestamp <- "20240923_1243"
-model_version <-"US"
+timestamp <- "20240923_1746"
+model_version <-"DR"
 
 # Read the population data and transpose
 file_path <- paste0("out/", model_version, "/interp/logs/", timestamp, "_pop.csv")

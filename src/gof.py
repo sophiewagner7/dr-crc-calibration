@@ -7,10 +7,21 @@ def objective(log, i):
     inc, _, _, inc_log = log
     score = 0
 
-    # Yearly incidence penalty (20-84)
-    score += np.square(inc[6, :65] - c.seer_inc["Local Rate"]).sum()
-    score += np.square(inc[7, :65] - c.seer_inc["Regional Rate"]).sum()
-    score += np.square(inc[8, :65] - c.seer_inc["Distant Rate"]).sum()
+    if c.model_version == "US":
+        # Yearly incidence penalty (20-84)
+        score += np.square(inc[6, :65] - c.seer_inc["Local Rate"]).sum()
+        score += np.square(inc[7, :65] - c.seer_inc["Regional Rate"]).sum()
+        score += np.square(inc[8, :65] - c.seer_inc["Distant Rate"]).sum()
+
+    elif c.model_version == "DR":
+        model_total_inc = np.sum(inc[6:9,:], axis=0)
+        model_stages = [
+            np.sum(inc[stage]) / np.sum(model_total_inc) for stage in [6, 7, 8]
+        ]
+        # Yearly incidence penalty
+        score += np.square(model_total_inc[:65] - c.dr_inc).sum()
+        # Cumulative stage distribution
+        score += np.abs(model_stages - c.dr_stage_dist).sum() * 100
 
     # Polyp prevalence penalty (pooled)
     score += (1 / np.sqrt(35656)) * np.square(
