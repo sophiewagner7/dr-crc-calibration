@@ -161,39 +161,40 @@ def plot_vs_seer(curr_log, seer_inc, save_imgs=False, outpath=None, timestamp=No
     else:
         plt.show()
 
-def plot_prop_dr(inc_adj, stages, save_imgs=False, outpath=None, timestamp=None):
-    """Plotting yearly incidence by stage, and dots for the total inc proportion
-    """
-    plt.bar()
-    calibration_proportions=stages
-    model_total_inc = np.sum(inc_adj[6:9, :65], axis=0)
-    model_proportions = [
-            np.sum(inc_adj[stage, :65]) / np.sum(model_total_inc) for stage in [6, 7, 8]
-        ]
-    
-    # Create the figure and axis
-    plt.figure(figsize=(8, 6))
-    bar_width=0.4
-    x=1
-    # Plot stacked bars for the model
-    plt.bar(x - bar_width/2, model_proportions[0], width=bar_width, label='Model - Local', color='red')
-    plt.bar(x - bar_width/2, model_proportions[1], width=bar_width, bottom=model_proportions[0], label='Model - Regional', color='blue')
-    plt.bar(x - bar_width/2, model_proportions[2], width=bar_width, bottom=model_proportions[0] + model_proportions[1], label='Model - Distant', color='green')
 
-    # Plot stacked bars for the calibration targets
-    plt.bar(x + bar_width/2, calibration_proportions[0], width=bar_width, label='HGPS - Local', color='blue', hatch='/')
-    plt.bar(x + bar_width/2, calibration_proportions[1], width=bar_width, bottom=calibration_proportions[0], label='HGPS- Regional', color='red', hatch='/')
-    plt.bar(x + bar_width/2, calibration_proportions[2], width=bar_width, bottom=calibration_proportions[0] + calibration_proportions[1], label='HGPS- Distant', color='green', hatch='/')
+def plot_prop_dr(inc_adj, stages, save_imgs=False, outpath=None, timestamp=None):
+    """Plotting yearly incidence by stage, and dots for the total inc proportion"""
+    calibration_proportions = stages
+    model_total_inc = np.sum(inc_adj.iloc[6:9, :65], axis=0)
+    model_proportions = [
+        np.sum((inc_adj.iloc[stage, :65]) / np.sum(model_total_inc)) * 100
+        for stage in [6, 7, 8]
+    ]
+
+    x = ["HGPS", "Model"]
+
+    # Separate the stages into distinct arrays for plotting
+    local = [calibration_proportions[0], model_proportions[0]]
+    regional = [calibration_proportions[1], model_proportions[1]]
+    distant = [calibration_proportions[2], model_proportions[2]]
+
+    # Plot the bars with proper stacking
+    plt.bar(x, local, color="b", label="Local")
+    plt.bar(x, regional, bottom=local, color="r", label="Regional")
+    plt.bar(
+        x,
+        distant,
+        bottom=[i + j for i, j in zip(local, regional)],
+        color="g",
+        label="Distant",
+    )
 
     # Customize the plot
-    plt.xticks(x, ['Cancer Stage Proportions'])
-    plt.ylabel('Proportion')
-    plt.title('Model vs Calibration Target - Stacked Bar Chart')
-    plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
+    plt.ylabel("Percent")
+    plt.title("Model vs Calibration Target - Cumulative Stage Distribution")
+    plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
 
-    # Display the plot
-    plt.tight_layout()
-
+    # Save or show the plot
     if save_imgs:
         plt.savefig(f"{outpath}/{timestamp}_inc_stage.png")  # Save figure
         plt.close()
@@ -205,7 +206,7 @@ def plot_vs_seer_total(
     curr_log, seer_inc, save_imgs=False, outpath=None, timestamp=None
 ):
     inc_adj, _, _, _ = curr_log
-    x_values = np.arange(20,100)
+    x_values = np.arange(20, 100)
     seer_inc.loc[:, "Total Rate"] = (
         seer_inc["Local Rate"] + seer_inc["Regional Rate"] + seer_inc["Distant Rate"]
     )

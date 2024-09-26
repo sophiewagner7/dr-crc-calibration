@@ -9,6 +9,7 @@ max_age = 100
 N = 100000  # Size of sample populations
 model_type = "interp"  # linear, logis_all, logis_healthy_lr, logis_linear
 model_version = "DR"  # US, DR
+dr_stage_penalty = "Yearly"  # Yearly, Total
 
 # Global strategy parameters
 screen_start = 45
@@ -177,6 +178,7 @@ elif model_version == "DR":
         }
     )
 
+    dr_stage_dist *= 100
     # Target 2: Polyp prevalence
     polyp_prev = pd.read_excel("../data/polyp_targets.xlsx", sheet_name="Sheet1")
     polyp_targets = polyp_prev["Value"].to_numpy()  # uCRC, polyp, uCRC + polyp
