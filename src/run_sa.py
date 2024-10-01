@@ -116,14 +116,12 @@ def interp(
         p.plot_vs_seer(curr_log, c.seer_inc)
         p.plot_vs_seer_total(curr_log, c.seer_inc)
 
+    return curr_tmat
 
-interp(
-    100000,
+
+result = interp(
+    50000,
     0.5,
     save_all=True,
 )
-interp(
-    10000,
-    0.1,
-    save_all=True,
-)
+interp(10000, 0.1, start_tmat=result, save_all=True)

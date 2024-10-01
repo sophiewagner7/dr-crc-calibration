@@ -1,0 +1,19 @@
+Monthly transition probs
+healthy to LR_polyp: 0.00045
+LR_polyp to HR_polyp: 0.00136
+HR_polyp to u_CRC_loc: 0.00308
+u_CRC_loc to u_CRC_reg: 0.04321
+u_CRC_reg to u_CRC_dis: 0.04648
+u_CRC_loc to d_CRC_loc: 0.02373
+u_CRC_reg to d_CRC_reg: 0.08251
+u_CRC_dis to d_CRC_dis: 0.16573
+
+Annual transition probs
+healthy to LR_polyp: 0.00539
+LR_polyp to HR_polyp: 0.01625
+HR_polyp to u_CRC_loc: 0.03630
+u_CRC_loc to u_CRC_reg: 0.41140
+u_CRC_reg to u_CRC_dis: 0.43512
+u_CRC_loc to d_CRC_loc: 0.25034
+u_CRC_reg to d_CRC_reg: 0.64418
+u_CRC_dis to d_CRC_dis: 0.88633
