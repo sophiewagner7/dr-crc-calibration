@@ -43,7 +43,7 @@ health_states = {
 acm_states = [10, 12, 12, 13, 13, 13, 11, 11, 11]
 
 # Transition points
-points = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (3, 6), (4, 7), (5, 8)]
+points = [(0, 1), (3, 6), (4, 7), (5, 8)]
 desired_transitions = [
     ("healthy", "LR_polyp"),
     ("LR_polyp", "HR_polyp"),
