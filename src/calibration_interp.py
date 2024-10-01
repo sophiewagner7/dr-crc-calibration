@@ -110,7 +110,7 @@ def interp_matrix(matrix):
             :65, from_state, to_state
         ]  # Transition probabilities up to age 85
         anchored = np.append(
-            under_85, matrix[64, from_state, to_state]
+            under_85, np.mean(matrix[:65, from_state, to_state])
         )  # Anchor at age 85
         weights = np.ones_like(anchored)
         weights[-1] = 5

@@ -118,8 +118,12 @@ def interp(
 
 
 interp(
-    10000,
+    100000,
     0.5,
-    start_tmat=np.load("../out/US/interp/tmats/20240923_1243_tmat.npy"),
+    save_all=True,
+)
+interp(
+    10000,
+    0.1,
     save_all=True,
 )

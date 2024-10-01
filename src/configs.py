@@ -8,7 +8,7 @@ starting_age = 20
 max_age = 100
 N = 100000  # Size of sample populations
 model_type = "interp"  # linear, logis_all, logis_healthy_lr, logis_linear
-model_version = "DR"  # US, DR
+model_version = "US"  # US, DR
 dr_stage_penalty = "Yearly"  # Yearly, Total
 
 # Global strategy parameters
@@ -43,7 +43,7 @@ health_states = {
 acm_states = [10, 12, 12, 13, 13, 13, 11, 11, 11]
 
 # Transition points
-points = [(0, 1), (3, 6), (4, 7), (5, 8)]
+points = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (3, 6), (4, 7), (5, 8)]
 desired_transitions = [
     ("healthy", "LR_polyp"),
     ("LR_polyp", "HR_polyp"),
