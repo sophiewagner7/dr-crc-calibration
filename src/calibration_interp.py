@@ -99,9 +99,7 @@ def interp_matrix(matrix):
     age_mids = np.append(
         np.arange(0, 65), max_age_idx
     )  # Age midpoints, capped at max_age_idx
-    all_ages = c.age_layers[
-        : matrix.shape[0]
-    ]  # Restrict to the shape of the matrix (e.g., 0 to 79)
+    all_ages = c.age_layers[: matrix.shape[0]]  # Restrict to the shape of the matrix
     half_ages = np.arange(
         0, max_age_idx + 0.5, 0.5
     )  # Half-year increments within valid range
@@ -114,8 +112,11 @@ def interp_matrix(matrix):
         anchored = np.append(
             under_85, matrix[64, from_state, to_state]
         )  # Anchor at age 85
+        weights = np.ones_like(anchored)
+        weights[-1] = 5
+
         smoothed_spline = csaps(
-            age_mids, anchored, smooth=0.001
+            age_mids, anchored, weights=weights, smooth=0.001
         )  # Spline for interpolation
 
         # Interpolate/extrapolate at half-year intervals
