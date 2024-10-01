@@ -57,6 +57,10 @@ def constrain_matrix(matrix):
         matrix[:, 0, 1], matrix[:, 1, 2]
     )  # HR to LR > healthy to uLoc
     matrix[:, 2, 3] = np.maximum(matrix[:, 1, 2], matrix[:, 2, 3])
+    matrix[:, 3, 4] = np.maximum(matrix[:, 2, 3], matrix[:, 3, 4])
+    matrix[:, 3, 4] = np.maximum(func.probtoprob(0.375), matrix[:, 3, 4])
+    matrix[:, 4, 5] = np.maximum(matrix[:, 3, 4], matrix[:, 4, 5])
+    matrix[:, 4, 5] = np.maximum(func.probtoprob(0.425), matrix[:, 4, 5])
 
     # Detection Block
     matrix[:, 3, 6] = np.maximum(0, matrix[:, 3, 6])  # not below 0
@@ -104,7 +108,6 @@ def interp_matrix(matrix):
         0, max_age_idx + 0.5, 0.5
     )  # Half-year increments within valid range
     interp_points = c.points  # State transitions to interpolate
-
     for from_state, to_state in interp_points:
         under_85 = matrix[
             :65, from_state, to_state
