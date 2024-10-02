@@ -65,7 +65,7 @@ def constrain_matrix(matrix):
     # Detection Block
     matrix[:, 3, 6] = np.maximum(0, matrix[:, 3, 6])  # not below 0
     matrix[:, 4, 7] = np.maximum(
-        matrix[:, 3, 6], matrix[:, 4, 7]
+        matrix[:, 3, 6], np.minimum(func.probtoprob(0.7), matrix[:, 4, 7])
     )  # P[d_reg] > P[d_loc]
     matrix[:, 5, 8] = np.maximum(
         matrix[:, 4, 7], matrix[:, 5, 8]
