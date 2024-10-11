@@ -60,15 +60,14 @@ def constrain_matrix(matrix):
     )  # HR to LR > healthy to uLoc
     matrix[:, 2, 3] = np.maximum(matrix[:, 1, 2], matrix[:, 2, 3])
     matrix[:, 3, 4] = np.maximum(matrix[:, 2, 3], matrix[:, 3, 4])
-    matrix[:, 3, 4] = np.maximum(func.probtoprob(0.375), matrix[:, 3, 4])
+    matrix[:, 3, 4] = np.maximum(func.probtoprob(0.35), matrix[:, 3, 4])
     matrix[:, 4, 5] = np.maximum(matrix[:, 3, 4], matrix[:, 4, 5])
-    matrix[:, 4, 5] = np.maximum(func.probtoprob(0.425), matrix[:, 4, 5])
+    matrix[:, 4, 5] = np.maximum(func.probtoprob(0.40), matrix[:, 4, 5])
 
     # Detection Block
     matrix[:, 3, 6] = np.maximum(0, matrix[:, 3, 6])  # not below 0
-    matrix[:, 4, 7] = np.maximum(
-        matrix[:, 3, 6], np.minimum(func.probtoprob(0.7), matrix[:, 4, 7])
-    )  # P[d_reg] > P[d_loc]
+    matrix[:, 3, 6] = np.minimum(matrix[:, 3, 6], matrix[:, 4, 7])  # uR dR > uL dL
+    matrix[:, 4, 7] = matrix[:, 4, 7].clip(func.probtoprob(0.45), func.probtoprob(0.75))
     matrix[:, 5, 8] = np.maximum(
         matrix[:, 4, 7], matrix[:, 5, 8]
     )  # P[d_dis] > P[d_reg]
@@ -97,7 +96,7 @@ def add_csd(matrix):
     return matrix
 
 
-def interp_matrix_anchor(matrix):
+def interp_matrix(matrix):
 
     max_age_idx = (
         matrix.shape[0] - 1
@@ -126,33 +125,9 @@ def interp_matrix_anchor(matrix):
 
         # Interpolate/extrapolate at half-year intervals
         half_year_probs = smoothed_spline(half_ages).clip(0.000001, 0.4)
+        probs = half_year_probs[::2][: matrix.shape[0]]
+        matrix[:, from_state, to_state] = probs
 
-        # Resample back to original ages by picking every second value (0, 1, 2, ..., max_age_idx)
-        matrix[:, from_state, to_state] = half_year_probs[::2][
-            : matrix.shape[0]
-        ]  # Clip to matrix shape
-
-    return matrix
-
-
-def interp_matrix(matrix):
-    """interpolate matrix up to age 85, then hold parameter constant
-
-    Args:
-        matrix (2d array): contains transition probs, shape (ages, health states, health states)
-    """
-    age_mids = np.arange(0, 65)  # Age midpoints
-    interp_points = c.points  # State transitions to interpolate
-    for from_state, to_state in interp_points:
-        under_85 = pd.Series(
-            matrix[:65, from_state, to_state]
-        )  # Transition probabilities up to age 85
-        moving_avg = under_85.rolling(window=5, center=True).mean().to_numpy()
-        spline = csaps(age_mids, moving_avg, smooth=0.01)
-        splined_vals = spline(age_mids).clip(0.0000001, 0.4)
-        extended_values = np.mean(splined_vals[-5:])  # Use mean of last five points
-        tps = np.append(splined_vals, [extended_values] * 15)
-        matrix[:, from_state, to_state] = tps
     return matrix
 
 
