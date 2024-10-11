@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from csaps import csaps
 import configs as c
 import common_functions as func
@@ -6,6 +7,7 @@ import markov as m
 import gof
 import calibration_plots as p
 from tqdm import tqdm
+from scipy.interpolate import UnivariateSpline
 
 
 def row_normalize(matrix):
@@ -95,7 +97,7 @@ def add_csd(matrix):
     return matrix
 
 
-def interp_matrix(matrix):
+def interp_matrix_anchor(matrix):
 
     max_age_idx = (
         matrix.shape[0] - 1
@@ -130,6 +132,26 @@ def interp_matrix(matrix):
             : matrix.shape[0]
         ]  # Clip to matrix shape
 
+    return matrix
+
+
+def interp_matrix(matrix):
+    """interpolate matrix up to age 85, then hold parameter constant
+
+    Args:
+        matrix (2d array): contains transition probs, shape (ages, health states, health states)
+    """
+    age_mids = np.arange(0, 65)  # Age midpoints
+    interp_points = c.points  # State transitions to interpolate
+    for from_state, to_state in interp_points:
+        under_85 = pd.Series(
+            matrix[:65, from_state, to_state]
+        )  # Transition probabilities up to age 85
+        moving_avg = under_85.rolling(window=5, center=True).mean().to_numpy()
+        spline = UnivariateSpline(age_mids, moving_avg, s=0.01).clip(0.0000001, 0.4)
+        extended_values = np.mean(spline[-5:])  # Use mean of last five points
+        spline = np.append(spline, [extended_values] * 15)
+        matrix[:, from_state, to_state] = spline
     return matrix
 
 
