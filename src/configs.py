@@ -7,7 +7,7 @@ from scipy.interpolate import interp1d
 starting_age = 20
 max_age = 100
 N = 100000  # Size of sample populations
-model_type = "interp"  # linear, logis_all, logis_healthy_lr, logis_linear
+model_type = "flat"  # linear, logis_all, logis_healthy_lr, logis_linear
 model_version = "US"  # US, DR
 dr_stage_penalty = "Yearly"  # Yearly, Total
 
@@ -19,6 +19,7 @@ surveil_end = 85
 OUTPUT_PATHS = {
     "interp": f"../out/{model_version}/interp/",
     "lin_log": f"../out/{model_version}/log_lin/",
+    "flat": f"../out/{model_version}/flat/",
 }
 
 # State Structure
