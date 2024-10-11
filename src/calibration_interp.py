@@ -148,10 +148,11 @@ def interp_matrix(matrix):
             matrix[:65, from_state, to_state]
         )  # Transition probabilities up to age 85
         moving_avg = under_85.rolling(window=5, center=True).mean().to_numpy()
-        spline = UnivariateSpline(age_mids, moving_avg, s=0.01).clip(0.0000001, 0.4)
-        extended_values = np.mean(spline[-5:])  # Use mean of last five points
-        spline = np.append(spline, [extended_values] * 15)
-        matrix[:, from_state, to_state] = spline
+        spline = csaps(age_mids, moving_avg, smooth=0.01)
+        splined_vals = spline(age_mids).clip(0.0000001, 0.4)
+        extended_values = np.mean(splined_vals[-5:])  # Use mean of last five points
+        tps = np.append(splined_vals, [extended_values] * 15)
+        matrix[:, from_state, to_state] = tps
     return matrix
 
 
