@@ -20,16 +20,25 @@ def extract_transition_probs(tmat, states, transitions):
     return transition_probs
 
 
-# Print the transition probabilities in a readable format
 def print_trans_probs(transition_probs, save_imgs=False, outpath=None, timestamp=None):
-    print("Monthly transition probs")
+    print("Monthly transition probabilities")
     for transition, prob in transition_probs.items():
-        print(f"{transition}: {prob[30]:.5f}")
+        min_prob = np.min(prob)
+        max_prob = np.max(prob)
+        avg_prob = np.mean(prob)
+        print(
+            f"{transition}: Min: {min_prob:.5f}, Max: {max_prob:.5f}, Average: {avg_prob:.5f}"
+        )
 
-    print("\nAnnual transition probs")
+    print("\nAnnual transition probabilities")
     for transition, prob in transition_probs.items():
-        annual_prob = func.probtoprob(prob[30], 12, 1)
-        print(f"{transition}: {annual_prob:.5f}")
+        annual_probs = [func.probtoprob(p, 12, 1) for p in prob]
+        min_annual_prob = np.min(annual_probs)
+        max_annual_prob = np.max(annual_probs)
+        avg_annual_prob = np.mean(annual_probs)
+        print(
+            f"{transition}: Min: {min_annual_prob:.5f}, Max: {max_annual_prob:.5f}, Average: {avg_annual_prob:.5f}"
+        )
 
     if save_imgs:
         file_path = f"{outpath}/{timestamp}_transition_probs.txt"
@@ -38,14 +47,24 @@ def print_trans_probs(transition_probs, save_imgs=False, outpath=None, timestamp
         with open(file_path, "w") as f:
             sys.stdout = f  # Redirect standard output to the file
 
-            print("Monthly transition probs")
+            print("Monthly transition probabilities")
             for transition, prob in transition_probs.items():
-                print(f"{transition}: {prob[30]:.5f}")
+                min_prob = np.min(prob)
+                max_prob = np.max(prob)
+                avg_prob = np.mean(prob)
+                print(
+                    f"{transition}: Min: {min_prob:.5f}, Max: {max_prob:.5f}, Average: {avg_prob:.5f}"
+                )
 
-            print("\nAnnual transition probs")
+            print("\nAnnual transition probabilities")
             for transition, prob in transition_probs.items():
-                annual_prob = func.probtoprob(prob[30], 12, 1)
-                print(f"{transition}: {annual_prob:.5f}")
+                annual_probs = [func.probtoprob(p, 12, 1) for p in prob]
+                min_annual_prob = np.min(annual_probs)
+                max_annual_prob = np.max(annual_probs)
+                avg_annual_prob = np.mean(annual_probs)
+                print(
+                    f"{transition}: Min: {min_annual_prob:.5f}, Max: {max_annual_prob:.5f}, Average: {avg_annual_prob:.5f}"
+                )
 
         # Reset stdout back to default
         sys.stdout = sys.__stdout__

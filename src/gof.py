@@ -10,9 +10,9 @@ def objective(log, i):
     score = 0
     if c.model_version == "US":
         # Yearly incidence penalty (20-84)
-        score1 += np.square(inc[6, :65] - c.seer_inc["Local Rate"]).sum()
-        score1 += np.square(inc[7, :65] - c.seer_inc["Regional Rate"]).sum()
-        score1 += np.square(inc[8, :65] - c.seer_inc["Distant Rate"]).sum()
+        score1 += np.square(inc[6, :65] - 1.1 * c.seer_inc["Local Rate"]).sum()
+        score1 += np.square(inc[7, :65] - 1.1 * c.seer_inc["Regional Rate"]).sum()
+        score1 += np.square(inc[8, :65] - 1.1 * c.seer_inc["Distant Rate"]).sum()
 
     elif c.model_version == "DR":
         if c.dr_stage_penalty == "Pooled":

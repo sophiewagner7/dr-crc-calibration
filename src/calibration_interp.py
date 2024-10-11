@@ -60,17 +60,12 @@ def constrain_matrix(matrix):
     )  # HR to LR > healthy to uLoc
     matrix[:, 2, 3] = np.maximum(matrix[:, 1, 2], matrix[:, 2, 3])
     matrix[:, 3, 4] = np.maximum(matrix[:, 2, 3], matrix[:, 3, 4])
-    matrix[:, 3, 4] = np.maximum(func.probtoprob(0.35), matrix[:, 3, 4])
     matrix[:, 4, 5] = np.maximum(matrix[:, 3, 4], matrix[:, 4, 5])
-    matrix[:, 4, 5] = np.maximum(func.probtoprob(0.40), matrix[:, 4, 5])
 
     # Detection Block
     matrix[:, 3, 6] = np.maximum(0, matrix[:, 3, 6])  # not below 0
-    matrix[:, 3, 6] = np.minimum(matrix[:, 3, 6], matrix[:, 4, 7])  # uR dR > uL dL
-    matrix[:, 4, 7] = matrix[:, 4, 7].clip(func.probtoprob(0.45), func.probtoprob(0.75))
-    matrix[:, 5, 8] = np.maximum(
-        matrix[:, 4, 7], matrix[:, 5, 8]
-    )  # P[d_dis] > P[d_reg]
+    matrix[:, 4, 7] = np.maximum(matrix[:, 3, 6], matrix[:, 4, 7])  # uR dR > uL dL
+    matrix[:, 5, 8] = np.maximum(matrix[:, 4, 7], matrix[:, 5, 8])  # dR < dD
 
     return matrix
 
