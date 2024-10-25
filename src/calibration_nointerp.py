@@ -91,42 +91,7 @@ def add_csd(matrix):
     return matrix
 
 
-def interp_matrix(matrix):
-
-    max_age_idx = (
-        matrix.shape[0] - 1
-    )  # Ensure indexing fits the matrix, which is from 0 to 79
-    age_mids = np.append(
-        np.arange(0, 65), max_age_idx
-    )  # Age midpoints, capped at max_age_idx
-    all_ages = c.age_layers[: matrix.shape[0]]  # Restrict to the shape of the matrix
-    half_ages = np.arange(
-        0, max_age_idx + 0.5, 0.5
-    )  # Half-year increments within valid range
-    interp_points = c.points  # State transitions to interpolate
-    for from_state, to_state in interp_points:
-        under_85 = matrix[
-            :65, from_state, to_state
-        ]  # Transition probabilities up to age 85
-        anchored = np.append(
-            under_85, np.mean(matrix[:65, from_state, to_state])
-        )  # Anchor at age 85
-        weights = np.ones_like(anchored)
-        weights[-1] = 1.5
-
-        smoothed_spline = csaps(
-            age_mids, anchored, weights=weights, smooth=0.001
-        )  # Spline for interpolation
-
-        # Interpolate/extrapolate at half-year intervals
-        half_year_probs = smoothed_spline(half_ages).clip(0.000001, 0.4)
-        probs = half_year_probs[::2][: matrix.shape[0]]
-        matrix[:, from_state, to_state] = probs
-
-    return matrix
-
-
-def step(matrix, step_size, i, num_adj=21):
+def step(matrix, step_size, num_adj=21):
     new_matrix = np.copy(matrix)
     step_mat = np.random.choice(len(c.points), size=num_adj, replace=True)
     step_age = np.random.choice(len(c.age_layers[:65]), size=num_adj, replace=True)
@@ -139,8 +104,6 @@ def step(matrix, step_size, i, num_adj=21):
         )
 
     new_matrix = constrain_matrix(new_matrix)
-    if i % 500 == 0:
-        new_matrix = interp_matrix(new_matrix)
     new_matrix = add_acm(new_matrix)
     new_matrix = add_csd(new_matrix)
     new_matrix = row_normalize(new_matrix)
@@ -170,7 +133,7 @@ def simulated_annealing(
 
             # Run model
             candidate_t = np.copy(curr_t)
-            candidate_t = step(candidate_t, step_size, i, n_adj)
+            candidate_t = step(candidate_t, step_size, n_adj)
             candidate_log = m.run_markov_new(candidate_t)
             candidate_eval = gof.objective(candidate_log, i)  # Evaluate candidate point
 

@@ -53,21 +53,22 @@ def constrain_matrix(matrix):
 
     # Progression Block
     matrix[:, 0, 1] = np.maximum(0.000001, matrix[:, 0, 1])  # not below 0
-    matrix[:, 1, 2] = np.maximum(
-        matrix[:, 0, 1], matrix[:, 1, 2]
-    )  # HR to LR > healthy to uLoc
-    matrix[:, 2, 3] = np.maximum(matrix[:, 1, 2], matrix[:, 2, 3])
-    matrix[:, 3, 4] = np.maximum(matrix[:, 2, 3], matrix[:, 3, 4])
-    matrix[:, 4, 5] = np.maximum(matrix[:, 3, 4], matrix[:, 4, 5])
-    # Detection Block
+    matrix[:, 1, 2] = np.maximum(matrix[:, 0, 1], matrix[:, 1, 2])  # norm_lr < lr_hr
+    matrix[:, 2, 3] = np.maximum(matrix[:, 1, 2], matrix[:, 2, 3])  # lr_hr < hr_uLoc
+    matrix[:, 3, 4] = np.maximum(
+        matrix[:, 2, 3], matrix[:, 3, 4]
+    )  # hr_uLoc < uLoc_uReg
+    matrix[:, 4, 5] = np.maximum(
+        matrix[:, 3, 4], matrix[:, 4, 5]
+    )  # uLoc_uReg < uReg_uDis
+    # Constraints for Detection Block
     matrix[:, 3, 6] = np.maximum(0, matrix[:, 3, 6])  # not below 0
     matrix[:, 4, 7] = np.maximum(
         matrix[:, 3, 6], matrix[:, 4, 7]
-    )  # P[d_reg] > P[d_loc]
+    )  # uLoc_dLoc < uReg_dReg
     matrix[:, 5, 8] = np.maximum(
         matrix[:, 4, 7], matrix[:, 5, 8]
-    )  # P[d_dis] > P[d_reg]
-
+    )  # uReg_dReg < uDis_dDis
     return matrix
 
 
@@ -98,10 +99,10 @@ def step(matrix, step_size, num_adj=21):
 
     for i in range(num_adj):
         from_state, to_state = c.points[step_mat[i]][0], c.points[step_mat[i]][1]
-        step_param = matrix[:, from_state, to_state] * step_size
-        new_matrix[:, from_state, to_state] += np.random.uniform(
-            low=-step_param, high=step_param
-        )
+        mean_param = np.mean(np.mean(matrix[:, from_state, to_state]))
+        step_param = mean_param * step_size
+        mean_param += np.random.uniform(low=-step_param, high=step_param)
+        new_matrix[:, from_state, to_state] = mean_param
 
     new_matrix = constrain_matrix(new_matrix)
     new_matrix = add_acm(new_matrix)

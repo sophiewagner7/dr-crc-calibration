@@ -93,35 +93,19 @@ def add_csd(matrix):
 
 def interp_matrix(matrix):
 
-    max_age_idx = (
-        matrix.shape[0] - 1
-    )  # Ensure indexing fits the matrix, which is from 0 to 79
-    age_mids = np.append(
-        np.arange(0, 65), max_age_idx
-    )  # Age midpoints, capped at max_age_idx
-    all_ages = c.age_layers[: matrix.shape[0]]  # Restrict to the shape of the matrix
-    half_ages = np.arange(
-        0, max_age_idx + 0.5, 0.5
-    )  # Half-year increments within valid range
+    age_mids = np.arange(0, 65)  # Age midpoints
+    half_ages = np.arange(0, 64.5, 0.5)  # Half-year increments within valid range
     interp_points = c.points  # State transitions to interpolate
     for from_state, to_state in interp_points:
         under_85 = matrix[
             :65, from_state, to_state
         ]  # Transition probabilities up to age 85
-        anchored = np.append(
-            under_85, np.mean(matrix[:65, from_state, to_state])
-        )  # Anchor at age 85
-        weights = np.ones_like(anchored)
-        weights[-1] = 1.5
-
-        smoothed_spline = csaps(
-            age_mids, anchored, weights=weights, smooth=0.001
-        )  # Spline for interpolation
-
+        smoothed_spline = csaps(age_mids, under_85, smooth=0.001)
         # Interpolate/extrapolate at half-year intervals
         half_year_probs = smoothed_spline(half_ages).clip(0.000001, 0.4)
-        probs = half_year_probs[::2][: matrix.shape[0]]
-        matrix[:, from_state, to_state] = probs
+        probs = half_year_probs[::2][:65]
+        matrix[:65, from_state, to_state] = probs
+        matrix[65:, from_state, to_state] = matrix[64, from_state, to_state]
 
     return matrix
 
