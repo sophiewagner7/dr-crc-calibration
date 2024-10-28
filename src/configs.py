@@ -61,7 +61,9 @@ idx_linear = np.arange(1, 8)
 idx_logis = np.array([1])
 
 # Age indices for the model
-age_layers = np.arange(0, 80, 1)
+age_layers = np.arange(0, (max_age - starting_age), 1)
+ages_5y = (age_layers // 5) * 5
+age_layers_5y = np.arange(0, len(ages_5y), 1)
 
 # Initial population state
 starting_pop = np.zeros((len(health_states), 1))
@@ -86,7 +88,7 @@ if model_version == "US":
     acm_1y = acm_1y[acm_1y["Age"] < 100].reset_index(drop=True)
     acm_rate_1y = func.probtoprob(acm_1y["Rate"]).to_numpy()
     acm_rate = acm_rate_1y if data_interval == 1 else acm_rate_5y
-
+    acm_rate = acm_rate[: len(age_layers)]
     # Cancer specific death
     seer_surv = pd.read_excel(
         "../data/survival_km.xlsx", sheet_name="Survival"
@@ -106,6 +108,7 @@ if model_version == "US":
     csd_rate = (
         pd.DataFrame(csd_interp).apply(lambda col: func.probtoprob(col)).to_numpy()
     )
+    csd_rate = csd_rate[: len(age_layers)]
 
     # Calibration Targets
     # Target 1: SEER Incidence

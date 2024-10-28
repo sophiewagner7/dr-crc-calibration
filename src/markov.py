@@ -121,11 +121,8 @@ def run_markov_new(matrix, starting_age=20, max_age=100):
     while current_age < max_age:
         mat = matrix[age_layer].T
         inflow_mat = np.tril(mat, k=-1)
-        # Get incidence of current month's transitions
         month_inc = np.matmul(inflow_mat, month_pop)  # (14,14)(14,1)-->(14,1)
-        # Actually make transitions
         month_pop = np.matmul(mat, month_pop)
-        # Add to log
         inc_log = np.concatenate((inc_log, month_inc), axis=1)
         pop_log = np.concatenate((pop_log, month_pop), axis=1)
         stage += 1
@@ -146,13 +143,13 @@ def run_markov_new(matrix, starting_age=20, max_age=100):
         inc_rate[state, :] = np.multiply(inc_rate[state, :], dead_factor)
         prevalence[state, :] = np.multiply(pop_log[state, :], dead_factor)
 
-    inc_rate = inc_rate.reshape(len(c.health_states), 80, 12).sum(
+    inc_rate = inc_rate.reshape(len(c.health_states), len(c.age_layers), 12).sum(
         axis=2
     )  # getting annual incidence (rate per 100k)
-    inc_log = inc_log.reshape(len(c.health_states), 80, 12).sum(
+    inc_log = inc_log.reshape(len(c.health_states), len(c.age_layers), 12).sum(
         axis=2
     )  # getting inc unadjusted
-    prevalence = prevalence.reshape(len(c.health_states), 80, 12).mean(
+    prevalence = prevalence.reshape(len(c.health_states), len(c.age_layers), 12).mean(
         axis=2
     )  # getting mean annual prevalence
 

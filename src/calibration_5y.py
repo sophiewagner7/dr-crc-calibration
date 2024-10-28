@@ -38,7 +38,9 @@ def create_matrix(params=None):
     if params is None:
         params = initialize_params()
 
-    matrix = np.zeros((len(c.age_layers), len(c.health_states), len(c.health_states)))
+    matrix = np.zeros(
+        (len(c.age_layers_5y), len(c.health_states), len(c.health_states))
+    )
     for idx, (from_state, to_state) in enumerate(c.points):
         matrix[:, from_state, to_state] = func.probtoprob(params[idx, 0])  # monthly
 
@@ -61,11 +63,6 @@ def constrain_matrix(matrix):
     matrix[:, 2, 3] = np.maximum(matrix[:, 1, 2], matrix[:, 2, 3])
     matrix[:, 3, 4] = np.maximum(matrix[:, 2, 3], matrix[:, 3, 4])
     matrix[:, 4, 5] = np.maximum(matrix[:, 3, 4], matrix[:, 4, 5])
-
-    # Non-decreasing
-    # matrix[:, 0, 1] = np.maximum.accumulate(matrix[:, 0, 1], axis=0)  # nondecreasing
-    # matrix[:, 1, 2] = np.maximum.accumulate(matrix[:, 1, 2], axis=0)  # nondecreasing
-    # matrix[:, 2, 3] = np.maximum.accumulate(matrix[:, 2, 3], axis=0)  # nondecreasing
 
     # Detection Block
     matrix[:, 3, 6] = np.maximum(0, matrix[:, 3, 6])  # not below 0
@@ -104,14 +101,29 @@ def interp_matrix(matrix):
     age_mids = np.append(
         np.arange(0, 65), max_age_idx
     )  # Age midpoints, capped at max_age_idx
-    half_ages = np.arange(0, max_age_idx + 1, 0.5)
-    anchored_matrix = matrix[:65, :, :].mean(axis=0, keepdims=True)  # Anchor point
-    matrix_to_interpolate = np.concatenate([matrix[:65], anchored_matrix], axis=0)
+    all_ages = c.age_layers[: matrix.shape[0]]  # Restrict to the shape of the matrix
+    half_ages = np.arange(
+        0, max_age_idx + 0.5, 0.5
+    )  # Half-year increments within valid range
+    interp_points = c.points  # State transitions to interpolate
+    for from_state, to_state in interp_points:
+        under_85 = matrix[
+            :65, from_state, to_state
+        ]  # Transition probabilities up to age 85
+        anchored = np.append(
+            under_85, np.mean(matrix[:65, from_state, to_state])
+        )  # Anchor at age 85
+        weights = np.ones_like(anchored)
+        weights[-1] = 1.5
 
-    smoothed_matrix = csaps(age_mids, matrix_to_interpolate, smooth=0.001, axis=0)(
-        half_ages
-    ).clip(0.000001, 0.4)
-    matrix = smoothed_matrix[1::2][: matrix.shape[0]]
+        smoothed_spline = csaps(
+            age_mids, anchored, weights=weights, smooth=0.001
+        )  # Spline for interpolation
+
+        # Interpolate/extrapolate at half-year intervals
+        half_year_probs = smoothed_spline(half_ages).clip(0.000001, 0.4)
+        probs = half_year_probs[::2][: matrix.shape[0]]
+        matrix[:, from_state, to_state] = probs
 
     return matrix
 
@@ -127,22 +139,9 @@ def step(matrix, step_size, i, num_adj=21):
         new_matrix[step_age[i], from_state, to_state] += np.random.uniform(
             low=-step_param, high=step_param
         )
-    new_matrix = interp_matrix(new_matrix)
-    # new_matrix = csaps(c.age_layers, new_matrix, axis=0, smooth=0.01)(
-    #     c.age_layers + 0.5
-    # )
-    # Having non-decreasing in every single step was too limiting
-    if i % 5000 == 0:
-        new_matrix[:, 0, 1] = np.maximum.accumulate(
-            new_matrix[:, 0, 1], axis=0
-        )  # nondecreasing
-        new_matrix[:, 1, 2] = np.maximum.accumulate(
-            new_matrix[:, 1, 2], axis=0
-        )  # nondecreasing
-        new_matrix[:, 2, 3] = np.maximum.accumulate(
-            new_matrix[:, 2, 3], axis=0
-        )  # nondecreasing
+
     new_matrix = constrain_matrix(new_matrix)
+    new_matrix = interp_matrix(new_matrix)
     new_matrix = add_acm(new_matrix)
     new_matrix = add_csd(new_matrix)
     new_matrix = row_normalize(new_matrix)
@@ -159,7 +158,7 @@ def simulated_annealing(
         start_pmat, start_tmat = create_matrix(start_pmat)
 
     best_t = np.copy(start_tmat)
-    best_log = m.run_markov_new(best_t, max_age=c.max_age)
+    best_log = m.run_markov_new(best_t)
     best_eval = gof.objective(best_log, 1)  # evaluate the initial point
     curr_t, curr_eval = best_t, best_eval  # current working solution
     ticker = 0
@@ -173,14 +172,14 @@ def simulated_annealing(
             # Run model
             candidate_t = np.copy(curr_t)
             candidate_t = step(candidate_t, step_size, i, n_adj)
-            candidate_log = m.run_markov_new(candidate_t, max_age=c.max_age)
+            candidate_log = m.run_markov_new(candidate_t)
             candidate_eval = gof.objective(candidate_log, i)  # Evaluate candidate point
 
             # Update "best" if better than candidate
             if candidate_eval < best_eval:
                 ticker = 0
                 best_t, best_eval = np.copy(candidate_t), np.copy(candidate_eval)
-                best_log = m.run_markov_new(best_t, max_age=c.max_age)
+                best_log = m.run_markov_new(best_t)
 
             else:
                 ticker += 1

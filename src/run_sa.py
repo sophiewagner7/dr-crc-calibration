@@ -54,7 +54,7 @@ def run_sa(
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
     curr_tmat = result.copy()
-    curr_log = m.run_markov_new(curr_tmat)
+    curr_log = m.run_markov_new(curr_tmat, max_age=c.max_age)
     log_adj, log_prev, log_pop, log_inc = curr_log
 
     # Extract transition probabilities
@@ -113,9 +113,10 @@ def run_sa(
     return curr_tmat
 
 
-run_sa(
+result = run_sa(
     c.model_type,
     200000,
-    0.1,
+    0.2,
     save_all=True,
 )
+run_sa(c.model_type, 50000, 0.1, start_tmat=result, save_all=True)
