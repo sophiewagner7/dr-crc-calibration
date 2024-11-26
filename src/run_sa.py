@@ -8,8 +8,8 @@ import markov as m
 import gof
 import calibration_plots as p
 from datetime import datetime
+import calibration_interp as ci
 from calibration_interp import simulated_annealing as interp_anneal
-from calibration_lin_log import simulated_annealing as lin_log_anneal
 from calibration_flat import simulated_annealing as flat_anneal
 
 
@@ -18,7 +18,7 @@ def run_sa(
     n_iterations=100000,
     step_size=0.1,
     start_tmat=None,
-    n_adj=33,
+    n_adj=25,
     verbose=True,
     save_all=True,
 ):
@@ -38,16 +38,8 @@ def run_sa(
             n_adj=n_adj,
             verbose=verbose,
         )
-    elif type == "linlog":
-        result = lin_log_anneal(
-            n_iterations=n_iterations,
-            step_size=step_size,
-            start_tmat=start_tmat,
-            n_adj=n_adj,
-            verbose=verbose,
-        )
     else:
-        print("Wrong model specification")
+        print(f"Wrong model specification: {type}")
         return
 
     # Generate the current timestamp in the format YYYYMMDD_HHMMSS
@@ -98,7 +90,7 @@ def run_sa(
             outpath=f"{output_dir}/plots",
             timestamp=timestamp,
         )
-        out = np.zeros((8, 80))
+        out = np.zeros((len(c.points), len(c.age_layers)))
         for idx, (from_state, to_state) in enumerate(c.points):
             out[idx] = curr_tmat[:, from_state, to_state]
 
@@ -113,10 +105,52 @@ def run_sa(
     return curr_tmat
 
 
-result = run_sa(
-    c.model_type,
-    200000,
-    0.2,
+t = np.load("../out/US/interp/tmats/20240923_1243_tmat.npy")
+tmat5c = np.copy(t)
+tmat5c[:, 0, 1] = np.maximum(
+    tmat5c[:, 0, 1], func.probtoprob(0.001)
+)  # Set lower bound for Norm to LR
+tmat5c[:, 1, 2] = np.maximum(
+    tmat5c[:, 1, 2], func.probtoprob(0.0075)
+)  # Set lower bound for LR to HR
+tmat5c[:, 2, 3] = np.maximum(
+    tmat5c[:, 2, 3], func.probtoprob(0.04)
+)  # Set lower bound for HR to uLoc
+tmat5c[:, 3, 4] = np.minimum(
+    tmat5c[:, 3, 4], func.probtoprob(0.4)
+)  # Set upper bound for uLoc to uReg
+tmat5c[:, 4, 5] = np.mean(tmat5c[:, 4, 5])  # Make constant
+tmat5c[:, 4, 7] = np.minimum(
+    tmat5c[:, 4, 7], func.probtoprob(0.7)
+)  # Set upper bound for detecting Reg cancer
+tmat5c[:, 4, 7] = np.maximum(
+    tmat5c[:, 4, 7], func.probtoprob(0.55)
+)  # Set lower bound for detecting Reg cancer
+tmat5c[:, 0, 1] *= 0.5
+
+# def get_5y(tmat):
+#     for from_state, to_state in c.points:
+#         age_mids = c.ages_1y
+#         all_ages = np.arange(22.5, 102.5, 5)
+#         new_matrix = np.zeros(
+#             (len(c.ages_5y), len(c.health_states), len(c.health_states))
+#         )
+#         for from_state, to_state in c.points:
+#             smoothed_params = csaps(
+#                 age_mids, tmat[:, from_state, to_state], smooth=0.05
+#             )(all_ages).clip(0.000001, 0.4)
+#             new_matrix[:, from_state, to_state] = smoothed_params
+#     return new_matrix
+
+tmat5c = ci.add_acm(tmat5c)
+tmat5c = ci.add_csd(tmat5c)
+tmat5c = ci.row_normalize(tmat5c)
+
+run_sa(
+    type=c.model_type,
+    n_iterations=200000,
+    step_size=0.01,
+    n_adj=11,
+    start_tmat=tmat5c,
     save_all=True,
 )
-run_sa(c.model_type, 50000, 0.1, start_tmat=result, save_all=True)

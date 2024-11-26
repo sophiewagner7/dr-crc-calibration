@@ -54,23 +54,24 @@ def constrain_matrix(matrix):
     matrix = np.clip(matrix, 0.0, 0.5)
 
     # Progression Block
-    matrix[:, 0, 1] = np.maximum(0.000001, matrix[:, 0, 1])  # not below 0
-    matrix[:, 1, 2] = np.maximum(
-        matrix[:, 0, 1], matrix[:, 1, 2]
-    )  # HR to LR > healthy to uLoc
+    matrix[:, 0, 1] = np.maximum(func.probtoprob(0.0005), matrix[:, 0, 1])
+    matrix[:, 1, 2] = np.maximum(matrix[:, 0, 1], matrix[:, 1, 2])
     matrix[:, 2, 3] = np.maximum(matrix[:, 1, 2], matrix[:, 2, 3])
     matrix[:, 3, 4] = np.maximum(matrix[:, 2, 3], matrix[:, 3, 4])
     matrix[:, 4, 5] = np.maximum(matrix[:, 3, 4], matrix[:, 4, 5])
 
-    # Non-decreasing
-    # matrix[:, 0, 1] = np.maximum.accumulate(matrix[:, 0, 1], axis=0)  # nondecreasing
-    # matrix[:, 1, 2] = np.maximum.accumulate(matrix[:, 1, 2], axis=0)  # nondecreasing
-    # matrix[:, 2, 3] = np.maximum.accumulate(matrix[:, 2, 3], axis=0)  # nondecreasing
+    # Params should increase with age
+    matrix[:, 0, 1] = np.maximum.accumulate(matrix[:, 0, 1], axis=0)
+    matrix[:, 1, 2] = np.maximum.accumulate(matrix[:, 0, 1], axis=0)
+    matrix[:, 2, 3] = np.maximum.accumulate(matrix[:, 0, 1], axis=0)
+    matrix[:, 3, 4] = np.maximum.accumulate(matrix[:, 0, 1], axis=0)
+    matrix[:, 4, 5] = np.maximum.accumulate(matrix[:, 0, 1], axis=0)
 
     # Detection Block
-    matrix[:, 3, 6] = np.maximum(0, matrix[:, 3, 6])  # not below 0
+    matrix[:, 3, 6] = np.maximum(func.probtoprob(0.05), matrix[:, 3, 6])
     matrix[:, 4, 7] = np.maximum(matrix[:, 3, 6], matrix[:, 4, 7])  # uR dR > uL dL
     matrix[:, 5, 8] = np.maximum(matrix[:, 4, 7], matrix[:, 5, 8])  # dR < dD
+    matrix[:, 5, 8] = np.minimum(matrix[:, 5, 8], func.probtoprob(0.99))
 
     return matrix
 
@@ -98,50 +99,35 @@ def add_csd(matrix):
 
 def interp_matrix(matrix):
 
-    max_age_idx = (
-        matrix.shape[0] - 1
-    )  # Ensure indexing fits the matrix, which is from 0 to 79
-    age_mids = np.append(
-        np.arange(0, 65), max_age_idx
-    )  # Age midpoints, capped at max_age_idx
-    half_ages = np.arange(0, max_age_idx + 1, 0.5)
-    anchored_matrix = matrix[:65, :, :].mean(axis=0, keepdims=True)  # Anchor point
-    matrix_to_interpolate = np.concatenate([matrix[:65], anchored_matrix], axis=0)
+    age_mids = np.arange(0.5, 65.5, 1)
+    age_mids = np.append(age_mids, 79.5)
+    all_ages = c.age_layers_1y
 
-    smoothed_matrix = csaps(age_mids, matrix_to_interpolate, smooth=0.001, axis=0)(
-        half_ages
-    ).clip(0.000001, 0.4)
-    matrix = smoothed_matrix[1::2][: matrix.shape[0]]
+    new_matrix = np.zeros((len(c.ages_1y), len(c.health_states), len(c.health_states)))
+    for from_state, to_state in c.points:
+        params = matrix[:, from_state, to_state]
+        anchor = params[:65].mean()
+        params_to_interp = np.append(params[:65], anchor)
+        smoothed_params = csaps(age_mids, params_to_interp, smooth=0.01)(all_ages).clip(
+            0.000001, 0.4
+        )
+        new_matrix[:, from_state, to_state] = smoothed_params
 
-    return matrix
+    return new_matrix
 
 
-def step(matrix, step_size, i, num_adj=21):
+def step(matrix, step_size, i, num_adj=33):
     new_matrix = np.copy(matrix)
     step_mat = np.random.choice(len(c.points), size=num_adj, replace=True)
     step_age = np.random.choice(len(c.age_layers[:65]), size=num_adj, replace=True)
 
     for i in range(num_adj):
         from_state, to_state = c.points[step_mat[i]][0], c.points[step_mat[i]][1]
-        step_param = np.mean(matrix[:, from_state, to_state]) * step_size
+        step_param = step_size[step_mat[i]]
         new_matrix[step_age[i], from_state, to_state] += np.random.uniform(
             low=-step_param, high=step_param
         )
     new_matrix = interp_matrix(new_matrix)
-    # new_matrix = csaps(c.age_layers, new_matrix, axis=0, smooth=0.01)(
-    #     c.age_layers + 0.5
-    # )
-    # Having non-decreasing in every single step was too limiting
-    if i % 5000 == 0:
-        new_matrix[:, 0, 1] = np.maximum.accumulate(
-            new_matrix[:, 0, 1], axis=0
-        )  # nondecreasing
-        new_matrix[:, 1, 2] = np.maximum.accumulate(
-            new_matrix[:, 1, 2], axis=0
-        )  # nondecreasing
-        new_matrix[:, 2, 3] = np.maximum.accumulate(
-            new_matrix[:, 2, 3], axis=0
-        )  # nondecreasing
     new_matrix = constrain_matrix(new_matrix)
     new_matrix = add_acm(new_matrix)
     new_matrix = add_csd(new_matrix)
@@ -157,6 +143,13 @@ def simulated_annealing(
     if start_tmat is None:
         start_pmat = initialize_params()
         start_pmat, start_tmat = create_matrix(start_pmat)
+        relative_step_sizes = np.minimum(0.01, start_pmat[:, 0] * step_size)
+        relative_step_sizes = func.probtoprob(relative_step_sizes)
+    else:
+        relative_step_sizes = [
+            np.mean(start_tmat[:, from_stage, to_stage])
+            for (from_stage, to_stage) in c.points
+        ]
 
     best_t = np.copy(start_tmat)
     best_log = m.run_markov_new(best_t, max_age=c.max_age)
@@ -168,11 +161,10 @@ def simulated_annealing(
         total=n_iterations, desc="Simulated annealing progress", unit="iteration"
     ) as pbar:
         for i in range(n_iterations):
-            # if ticker >= 25000: break
 
             # Run model
             candidate_t = np.copy(curr_t)
-            candidate_t = step(candidate_t, step_size, i, n_adj)
+            candidate_t = step(candidate_t, relative_step_sizes, i, n_adj)
             candidate_log = m.run_markov_new(candidate_t, max_age=c.max_age)
             candidate_eval = gof.objective(candidate_log, i)  # Evaluate candidate point
 

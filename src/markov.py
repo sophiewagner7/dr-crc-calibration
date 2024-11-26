@@ -126,9 +126,12 @@ def run_markov_new(matrix, starting_age=20, max_age=100):
         inc_log = np.concatenate((inc_log, month_inc), axis=1)
         pop_log = np.concatenate((pop_log, month_pop), axis=1)
         stage += 1
+
         if stage % 12 == 0:
             current_age += 1
-            age_layer += 1  # Update age layer annually
+            age_layer += 1
+            # if current_age in c.ages_5y:
+            #     age_layer += 1  # Update age layer every 5
 
     inc_log = inc_log[:, 1:]  # make (14,960)
     inc_rate = inc_log.copy()  # make (14,960)
@@ -143,14 +146,15 @@ def run_markov_new(matrix, starting_age=20, max_age=100):
         inc_rate[state, :] = np.multiply(inc_rate[state, :], dead_factor)
         prevalence[state, :] = np.multiply(pop_log[state, :], dead_factor)
 
-    inc_rate = inc_rate.reshape(len(c.health_states), len(c.age_layers), 12).sum(
+    inc_rate = inc_rate.reshape(len(c.health_states), len(c.age_layers_1y), 12).sum(
         axis=2
     )  # getting annual incidence (rate per 100k)
-    inc_log = inc_log.reshape(len(c.health_states), len(c.age_layers), 12).sum(
+    inc_log = inc_log.reshape(len(c.health_states), len(c.age_layers_1y), 12).sum(
         axis=2
     )  # getting inc unadjusted
-    prevalence = prevalence.reshape(len(c.health_states), len(c.age_layers), 12).mean(
+    prevalence = prevalence.reshape(
+        len(c.health_states), len(c.age_layers_1y), 12
+    ).mean(
         axis=2
     )  # getting mean annual prevalence
-
     return inc_rate, prevalence, pop_log, inc_log

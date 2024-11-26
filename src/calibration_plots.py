@@ -7,6 +7,7 @@ from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 import seaborn as sns
 import sys
+import configs as c
 
 
 # Function to extract transition probabilities
@@ -112,24 +113,32 @@ def plot_vs_seer(curr_log, seer_inc, save_imgs=False, outpath=None, timestamp=No
     inc_adj, _, _, _ = curr_log
     x_values = np.linspace(20, 99, 80)
 
+    if c.model_version == "US":
+        data_source = "SEER"
+    elif c.model_version == "DR":
+        if c.stage_DR == "HGPS":
+            data_source = "Globocan/HGPS"
+        else:
+            data_source = "Globocan/SEER"
+
     plt.plot(
         seer_inc["Age"],
         seer_inc["Local Rate"],
-        label="Local (SEER)",
+        label=f"Local ({data_source})",
         color="b",
         linestyle="dotted",
     )
     plt.plot(
         seer_inc["Age"],
         seer_inc["Regional Rate"],
-        label="Regional (SEER)",
+        label=f"Regional ({data_source})",
         color="r",
         linestyle="dotted",
     )
     plt.plot(
         seer_inc["Age"],
         seer_inc["Distant Rate"],
-        label="Distant (SEER)",
+        label=f"Distant ({data_source})",
         color="g",
         linestyle="dotted",
     )
@@ -149,21 +158,21 @@ def plot_vs_seer(curr_log, seer_inc, save_imgs=False, outpath=None, timestamp=No
     plt.plot(
         seer_inc["Age"],
         seer_inc["Local Rate"].cumsum(),
-        label="Local (SEER)",
+        label=f"Local ({data_source})",
         color="b",
         linestyle="dotted",
     )
     plt.plot(
         seer_inc["Age"],
         seer_inc["Regional Rate"].cumsum(),
-        label="Regional (SEER)",
+        label=f"Regional ({data_source})",
         color="r",
         linestyle="dotted",
     )
     plt.plot(
         seer_inc["Age"],
         seer_inc["Distant Rate"].cumsum(),
-        label="Distant (SEER)",
+        label=f"Distant ({data_source})",
         color="g",
         linestyle="dotted",
     )
@@ -226,6 +235,15 @@ def plot_vs_seer_total(
 ):
     inc_adj, _, _, _ = curr_log
     x_values = np.arange(20, 100)
+
+    if c.model_version == "US":
+        data_source = "SEER"
+    elif c.model_version == "DR":
+        if c.stage_DR == "HGPS":
+            data_source = "Globocan/HGPS"
+        else:
+            data_source = "Globocan/SEER"
+
     seer_inc.loc[:, "Total Rate"] = (
         seer_inc["Local Rate"] + seer_inc["Regional Rate"] + seer_inc["Distant Rate"]
     )
@@ -233,7 +251,7 @@ def plot_vs_seer_total(
     plt.plot(
         seer_inc["Age"],
         seer_inc["Total Rate"],
-        label="SEER",
+        label=f"{data_source}",
         color="b",
         linestyle="dotted",
     )
@@ -251,7 +269,7 @@ def plot_vs_seer_total(
     plt.plot(
         seer_inc["Age"],
         seer_inc["Total Rate"].cumsum(),
-        label="SEER",
+        label=f"{data_source}",
         color="b",
         linestyle="dotted",
     )

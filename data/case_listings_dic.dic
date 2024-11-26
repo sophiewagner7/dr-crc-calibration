@@ -1,0 +1,40 @@
+[System]
+Output filename=C:\Users\sophi\OneDrive - cumc.columbia.edu\CRC Screening Models\dr-crc-calibration\data\s8_case_lisitngs_1975_1985.csv
+Matrix filename=Case Listing Session-1 Matrix-1
+Database name=Incidence - SEER Research Data, 8 Registries, Nov 2023 Sub (1975-2021) - Linked To County Attributes - Time Dependent (1990-2022) Income/Rurality, 1969-2022 Counties
+Title1=S8 CRC case listings (1975-85)
+
+[Session Options]
+Type=Case Listing
+
+[Export Options]
+GZipped=false
+Variable format=labels
+File format=DOS/Windows
+Field delimiter=comma
+Missing character=space
+Fields with delimiter in quotes=true
+Remove thousands separators=true
+Variable names included=true
+Column Variables as Stats=false
+
+[Variables]
+Var1Name=Patient ID
+Var1DisplayType=Formatted
+Var2Name=Age recode with single ages and 85+
+Var2DisplayType=Formatted
+Var3Name=SEER cause-specific death classification
+Var3DisplayType=Formatted
+Var4Name=SEER other cause of death classification
+Var4DisplayType=Formatted
+Var5Name=Survival months
+Var5DisplayType=Formatted
+Var6Name=Survival months flag
+Var6DisplayType=Formatted
+Var7Name=Vital status recode (study cutoff used)
+Var7DisplayType=Formatted
+Var8Name=SEER historic stage A (1973-2015)
+Var8DisplayType=Formatted
+Var9Name=Year of diagnosis
+Var9DisplayType=Formatted
+
