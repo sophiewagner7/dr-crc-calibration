@@ -10,7 +10,7 @@ N = 100000  # Size of sample populations
 model_version = "DR"  # US, DR
 model_tps = "all"  # non_progress, all
 data_interval = 1  # 1-year or 5-year data
-inc_factor, polyp_factor = 1, 1  # Target ratios: [.5, 1, 2]
+inc_factor, polyp_factor = 1, 2  # Target ratios: [.5, 1, 2]
 stage = "HGPS"  # ["HGPS", "SEER"]
 output_file = f"{stage}_I{inc_factor}_P{polyp_factor}" if model_version == "DR" else "bc" 
 

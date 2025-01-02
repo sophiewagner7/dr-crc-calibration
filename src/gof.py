@@ -3,7 +3,7 @@ import configs as c
 
 
 # Calculate score based on difference between model outputs and targets
-def objective(log, i):
+def objective(log, i, obj):
     inc, _, inc_log, _ = log
     score1, score2, score = 0, 0, 0
 
@@ -15,7 +15,8 @@ def objective(log, i):
     # Polyp prevalence penalty (pooled)
     score2 += (1 / np.sqrt(35656)) * np.square(inc_log[12, :].sum() - c.N * c.polyp_targets[1])
     score2 += (1 / np.sqrt(31434)) * np.square(inc_log[13, :].sum() - c.N * c.polyp_targets[0])  # uCRC
-    score2 *= 0.5
+    score2 = score2/2 if obj == "pol" else score2/100  # weight of polyp loss contribution
+
     score = score1 + score2
 
     # Log output
