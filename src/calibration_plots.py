@@ -1,10 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from csaps import csaps  # https://csaps.readthedocs.io/en/latest/
 import common_functions as func
-from scipy.interpolate import interp1d
-from scipy.optimize import curve_fit
 import seaborn as sns
 import sys
 import configs as c
@@ -73,10 +70,12 @@ def print_trans_probs(transition_probs, save_imgs=False, outpath=None, timestamp
 
 # Plotting
 def plot_tps(curr_tmat, save_imgs=False, outpath=None, timestamp=None):
+    title = f"{c.model_version} :: {c.output_file} :: "
     plt.plot(func.probtoprob(curr_tmat[:, 3, 6], 12, 1), label="uLoc to dLoc")
     plt.plot(func.probtoprob(curr_tmat[:, 4, 7], 12, 1), label="uReg to dReg")
     plt.plot(func.probtoprob(curr_tmat[:, 5, 8], 12, 1), label="uDis to dDis")
     plt.legend()
+    plt.title(f"{title} Detection parameters")
     if save_imgs:
         plt.savefig(f"{outpath}/{timestamp}_params_detect.png")  # Save figure
         plt.close()
@@ -85,6 +84,7 @@ def plot_tps(curr_tmat, save_imgs=False, outpath=None, timestamp=None):
 
     plt.plot(func.probtoprob(curr_tmat[:, 0, 1], 12, 1), label="Healthy to LR")
     plt.legend()
+    plt.title(f"{title} Healthy to LR")
     if save_imgs:
         plt.savefig(f"{outpath}/{timestamp}_params_h_lr.png")  # Save figure
         plt.close()
@@ -96,6 +96,7 @@ def plot_tps(curr_tmat, save_imgs=False, outpath=None, timestamp=None):
     plt.plot(func.probtoprob(curr_tmat[:, 3, 4], 12, 1), label="uLoc to uReg")
     plt.plot(func.probtoprob(curr_tmat[:, 4, 5], 12, 1), label="uReg to uDis")
     plt.legend()
+    plt.title(f"{title} Progression parameters")
     if save_imgs:
         plt.savefig(f"{outpath}/{timestamp}_params_progress.png")  # Save figure
         plt.close()
@@ -111,42 +112,18 @@ def plot_vs_seer(curr_log, seer_inc, save_imgs=False, outpath=None, timestamp=No
         seer_inc (df): item of comparison
     """
     inc_adj, _, _, _ = curr_log
-    x_values = np.linspace(20, 99, 80)
-
-    if c.model_version == "US":
-        data_source = "SEER"
-    elif c.model_version == "DR":
-        if c.stage_DR == "HGPS":
-            data_source = "Globocan/HGPS"
-        else:
-            data_source = "Globocan/SEER"
-
-    plt.plot(
-        seer_inc["Age"],
-        seer_inc["Local Rate"],
-        label=f"Local ({data_source})",
-        color="b",
-        linestyle="dotted",
-    )
-    plt.plot(
-        seer_inc["Age"],
-        seer_inc["Regional Rate"],
-        label=f"Regional ({data_source})",
-        color="r",
-        linestyle="dotted",
-    )
-    plt.plot(
-        seer_inc["Age"],
-        seer_inc["Distant Rate"],
-        label=f"Distant ({data_source})",
-        color="g",
-        linestyle="dotted",
-    )
+    x_values = np.linspace(20, 100, 81)
+    data_source = "SEER" if c.model_version == "US" else f"Globocan/{c.stage}"
+    title = f"{c.model_version} :: {c.output_file} :: "
+    
+    plt.plot(seer_inc["Age"], seer_inc["Local Rate"], label=f"Local ({data_source})", color="b", linestyle="dotted")
+    plt.plot(seer_inc["Age"], seer_inc["Regional Rate"], label=f"Regional ({data_source})", color="r", linestyle="dotted")
+    plt.plot(seer_inc["Age"], seer_inc["Distant Rate"], label=f"Distant ({data_source})", color="g", linestyle="dotted")
     plt.plot(x_values, inc_adj[6, :], label="Local (Model)", color="b")
     plt.plot(x_values, inc_adj[7, :], label="Regional (Model)", color="r")
     plt.plot(x_values, inc_adj[8, :], label="Distant (Model)", color="g")
     plt.legend()
-    plt.title("Incidence of Local, Regional, and Distant States")
+    plt.title(f"{title} Incidence by Stage")
     plt.xlabel("Time Point / Age Group")
     plt.ylabel("incidence")
     if save_imgs:
@@ -155,32 +132,14 @@ def plot_vs_seer(curr_log, seer_inc, save_imgs=False, outpath=None, timestamp=No
     else:
         plt.show()
 
-    plt.plot(
-        seer_inc["Age"],
-        seer_inc["Local Rate"].cumsum(),
-        label=f"Local ({data_source})",
-        color="b",
-        linestyle="dotted",
-    )
-    plt.plot(
-        seer_inc["Age"],
-        seer_inc["Regional Rate"].cumsum(),
-        label=f"Regional ({data_source})",
-        color="r",
-        linestyle="dotted",
-    )
-    plt.plot(
-        seer_inc["Age"],
-        seer_inc["Distant Rate"].cumsum(),
-        label=f"Distant ({data_source})",
-        color="g",
-        linestyle="dotted",
-    )
+    plt.plot(seer_inc["Age"], seer_inc["Local Rate"].cumsum(),label=f"Local ({data_source})",color="b", linestyle="dotted")
+    plt.plot(seer_inc["Age"], seer_inc["Regional Rate"].cumsum(),label=f"Regional ({data_source})",color="r", linestyle="dotted")
+    plt.plot(seer_inc["Age"], seer_inc["Distant Rate"].cumsum(),label=f"Distant ({data_source})",color="g", linestyle="dotted")
     plt.plot(x_values, inc_adj[6, :].cumsum(), label="Local (Model)", color="b")
     plt.plot(x_values, inc_adj[7, :].cumsum(), label="Regional (Model)", color="r")
     plt.plot(x_values, inc_adj[8, :].cumsum(), label="Distant (Model)", color="g")
     plt.legend()
-    plt.title("Cumulative Incidence of Local, Regional, and Distant States")
+    plt.title(f"{title} Cumulative Incidence by Stage")
     plt.xlabel("Time Point / Age Group")
     plt.ylabel("incidence")
     if save_imgs:
@@ -234,27 +193,12 @@ def plot_vs_seer_total(
     curr_log, seer_inc, save_imgs=False, outpath=None, timestamp=None
 ):
     inc_adj, _, _, _ = curr_log
-    x_values = np.arange(20, 100)
+    x_values = np.arange(20, 101)
+    data_source = "SEER" if c.model_version == "US" else f"Globocan/{c.stage}"
+    title = f"{c.model_version} :: {c.output_file} :: "
+    seer_inc.loc[:, "Total Rate"] = (seer_inc["Local Rate"] + seer_inc["Regional Rate"] + seer_inc["Distant Rate"])
 
-    if c.model_version == "US":
-        data_source = "SEER"
-    elif c.model_version == "DR":
-        if c.stage_DR == "HGPS":
-            data_source = "Globocan/HGPS"
-        else:
-            data_source = "Globocan/SEER"
-
-    seer_inc.loc[:, "Total Rate"] = (
-        seer_inc["Local Rate"] + seer_inc["Regional Rate"] + seer_inc["Distant Rate"]
-    )
-
-    plt.plot(
-        seer_inc["Age"],
-        seer_inc["Total Rate"],
-        label=f"{data_source}",
-        color="b",
-        linestyle="dotted",
-    )
+    plt.plot(seer_inc["Age"],seer_inc["Total Rate"],label=f"{data_source}",color="b",linestyle="dotted")
     plt.plot(x_values, np.sum(inc_adj[6:9, :], axis=0), label="Model", color="b")
     plt.legend()
     plt.title("Total Incidence (L+R+D)")
@@ -266,18 +210,10 @@ def plot_vs_seer_total(
     else:
         plt.show()
 
-    plt.plot(
-        seer_inc["Age"],
-        seer_inc["Total Rate"].cumsum(),
-        label=f"{data_source}",
-        color="b",
-        linestyle="dotted",
-    )
-    plt.plot(
-        x_values, np.sum(inc_adj[6:9, :], axis=0).cumsum(), label="Model", color="b"
-    )
+    plt.plot(seer_inc["Age"],seer_inc["Total Rate"].cumsum(),label=f"{data_source}",color="b",linestyle="dotted")
+    plt.plot(x_values, np.sum(inc_adj[6:9, :], axis=0).cumsum(), label="Model", color="b")
     plt.legend()
-    plt.title("Cumulative Incidence")
+    plt.title(f"{title} Cumulative Incidence")
     plt.xlabel("Time Point / Age Group")
     plt.ylabel("incidence")
     if save_imgs:
