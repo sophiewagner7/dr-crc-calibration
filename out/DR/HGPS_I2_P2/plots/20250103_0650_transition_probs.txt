@@ -1,0 +1,19 @@
+Monthly transition probabilities
+healthy to LR_polyp: Min: 0.00031, Max: 0.00037, Average: 0.00035
+LR_polyp to HR_polyp: Min: 0.00045, Max: 0.00224, Average: 0.00167
+HR_polyp to u_CRC_loc: Min: 0.00261, Max: 0.00448, Average: 0.00353
+u_CRC_loc to u_CRC_reg: Min: 0.03032, Max: 0.04850, Average: 0.03590
+u_CRC_reg to u_CRC_dis: Min: 0.04565, Max: 0.06867, Average: 0.06121
+u_CRC_loc to d_CRC_loc: Min: 0.01259, Max: 0.01711, Average: 0.01589
+u_CRC_reg to d_CRC_reg: Min: 0.04149, Max: 0.09590, Average: 0.05546
+u_CRC_dis to d_CRC_dis: Min: 0.17231, Max: 0.31075, Average: 0.21836
+
+Annual transition probabilities
+healthy to LR_polyp: Min: 0.00367, Max: 0.00441, Average: 0.00419
+LR_polyp to HR_polyp: Min: 0.00540, Max: 0.02656, Average: 0.01989
+HR_polyp to u_CRC_loc: Min: 0.03085, Max: 0.05249, Average: 0.04149
+u_CRC_loc to u_CRC_reg: Min: 0.30887, Max: 0.44930, Average: 0.35402
+u_CRC_reg to u_CRC_dis: Min: 0.42922, Max: 0.57414, Average: 0.52934
+u_CRC_loc to d_CRC_loc: Min: 0.14107, Max: 0.18702, Average: 0.17478
+u_CRC_reg to d_CRC_reg: Min: 0.39859, Max: 0.70173, Average: 0.48702
+u_CRC_dis to d_CRC_dis: Min: 0.89663, Max: 0.98850, Average: 0.93851
