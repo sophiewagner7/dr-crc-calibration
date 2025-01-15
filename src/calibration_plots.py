@@ -18,6 +18,42 @@ def extract_transition_probs(tmat, states, transitions):
     return transition_probs
 
 
+def save_tps_treeage(matrix, convert=True, outpath=None, timestamp=None):
+    out = np.zeros((len(c.points,), matrix.shape[0]))
+    matrix = convert_to_conditional_probs(matrix) if convert else matrix
+    for idx, (from_state, to_state) in enumerate(c.points):
+        out[idx] = matrix[:, from_state, to_state]
+    pd.DataFrame(out).to_csv(f"{outpath}/{timestamp}_tps.csv")
+
+    
+def convert_to_conditional_probs(matrix):
+    """
+    Converts a transition matrix into conditional probabilities for TreeAge.
+    
+    Parameters:
+        matrix (numpy.ndarray): Transition matrix of shape (n_ages, n_states, n_states).
+    
+    Returns:
+        numpy.ndarray: Conditional transition matrix of the same shape.
+    """
+    conditional_matrix = np.copy(matrix)
+
+    # Loop through all transitions to adjust probabilities
+    for (from_idx, to_idx), (from_state, to_state) in zip(c.points, c.desired_transitions): 
+        # Compute survival probability (1 - ACM)
+        p_survive = 1 - matrix[:, from_idx, c.acm_states[from_idx]].clip(1e-10, 1.0)
+
+        # Normalize by survival probability
+        conditional_matrix[:, from_idx, to_idx] /= p_survive
+
+        # If transition is progression (e.g., u_PDAC_x -> u_PDAC_x+1), normalize by p(no_dx)
+        if from_idx in [3,4,5] and to_idx == from_idx + 1:  # Progression
+            dx_state = from_idx + 3  # Corresponding diagnosed state
+            p_no_dx = 1 - matrix[:, from_idx, dx_state].clip(1e-10, 1.0)
+            conditional_matrix[:, from_idx, to_idx] /= p_no_dx 
+    return conditional_matrix
+
+
 def print_trans_probs(transition_probs, save_imgs=False, outpath=None, timestamp=None):
     print("Monthly transition probabilities")
     for transition, prob in transition_probs.items():
@@ -104,7 +140,7 @@ def plot_tps(curr_tmat, save_imgs=False, outpath=None, timestamp=None):
         plt.show()
 
 
-def plot_vs_seer(curr_log, seer_inc, save_imgs=False, outpath=None, timestamp=None):
+def plot_vs_seer(curr_log, seer_inc=c.seer_inc, save_imgs=False, outpath=None, timestamp=None):
     """Plot model incidence by stage vs. SEER calibration incidence
 
     Args:
@@ -112,7 +148,7 @@ def plot_vs_seer(curr_log, seer_inc, save_imgs=False, outpath=None, timestamp=No
         seer_inc (df): item of comparison
     """
     inc_adj, _, _, _ = curr_log
-    x_values = np.linspace(20, 100, 81)
+    x_values = c.ages_1y
     data_source = "SEER" if c.model_version == "US" else f"Globocan/{c.stage}"
     title = f"{c.model_version} :: {c.output_file} :: "
     
@@ -189,11 +225,9 @@ def plot_prop_dr(inc_adj, stages, save_imgs=False, outpath=None, timestamp=None)
         plt.show()
 
 
-def plot_vs_seer_total(
-    curr_log, seer_inc, save_imgs=False, outpath=None, timestamp=None
-):
+def plot_vs_seer_total(curr_log, seer_inc, save_imgs=False, outpath=None, timestamp=None):
     inc_adj, _, _, _ = curr_log
-    x_values = np.arange(20, 101)
+    x_values = c.ages_1y
     data_source = "SEER" if c.model_version == "US" else f"Globocan/{c.stage}"
     title = f"{c.model_version} :: {c.output_file} :: "
     seer_inc.loc[:, "Total Rate"] = (seer_inc["Local Rate"] + seer_inc["Regional Rate"] + seer_inc["Distant Rate"])

@@ -5,11 +5,10 @@ library(dplyr)
 library(tidyr)
 library(ggridges)
 
-timestamp <- "20240923_1746"
-model_version <-"DR"
+timestamp <- "20240924_2148"
 
 # Read the population data and transpose
-file_path <- paste0("out/", model_version, "/interp/logs/", timestamp, "_pop.csv")
+file_path <- paste0("out/DR/HGPS_I1_P1/logs/", timestamp, "_pop.csv")
 pop <- read.csv(file_path)
 pop_t <- t(pop)[-1, ]  # Transpose and drop the first row
 pop_t <- as.data.frame(pop_t)
@@ -46,4 +45,4 @@ plot <- ggplot(pop_yr_long, aes(x = Year, y = perc, color = Health_State)) +
   labs(title = "Overlaid Health States with Areas and Lines", x = "Year", y = "Prevalence")
 
 # Save the plot
-ggsave(paste0("out/", model_version, "/interp/plots/", timestamp, "_health_states.png"), plot = plot, width = 12, height = 8)
+ggsave(paste0("out/DR/HGPS_I1_P1/plots/", timestamp, "_health_states.png"), plot = plot, width = 12, height = 8)
