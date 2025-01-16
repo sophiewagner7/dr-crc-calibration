@@ -5,7 +5,7 @@ from scipy.interpolate import interp1d
 
 # Global Parameters
 starting_age = 20
-max_age = 84
+max_age = 100
 N = 100000  # Size of sample populations
 model_version = "US"  # US, DR
 model_tps = "all"  # non_progress, all
@@ -212,7 +212,7 @@ if model_version == "US":
     # Load mortality inputs
     acm_rate_100, acm_rate_85 = load_acm_us()  # ACM
     csd_rate_100, csd_rate_85 = load_csd(yrs = "1996_1999")  # CSD (3, 80)
-    acm_rate, csd_rate = acm_rate_85, csd_rate_85
+    acm_rate, csd_rate = acm_rate_100, csd_rate_100
 
     ## TARGETS ##
     
