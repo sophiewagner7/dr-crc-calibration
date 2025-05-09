@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
 from csaps import csaps
+from tqdm import tqdm
+
 import configs as c
 import common_functions as func
 import markov as m
 import gof
 import calibration_plots as p
-from tqdm import tqdm
-from scipy.interpolate import UnivariateSpline
 
 
 def row_normalize(matrix):

@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
+
 import common_functions as func
-from scipy.interpolate import interp1d
+
 
 # Global Parameters
 starting_age = 20

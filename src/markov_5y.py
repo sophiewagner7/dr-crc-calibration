@@ -1,4 +1,5 @@
 import numpy as np
+
 import configs as c
 
 
@@ -36,25 +37,30 @@ def run_markov_new(matrix, starting_age=20, max_age=100):
     print(f"inc_rate.shape: {inc_rate.shape}")
     print(f"pop_log.shape: {pop_log.shape}")
 
+    # inc and prev denominator is out of living only
     dead_factor = np.divide(
         c.N, c.N - pop_log[9:, :].sum(axis=0)
-    )  # inc and prev denominator is out of living only
+    )  
     prevalence = np.zeros(pop_log.shape)  # (14,80)
 
     for state in range(14):
         inc_rate[state, :] = np.multiply(inc_rate[state, :], dead_factor)
         prevalence[state, :] = np.multiply(pop_log[state, :], dead_factor)
+        
+    # getting annual incidence (rate per 100k)
     inc_rate = inc_rate.reshape(len(c.health_states), len(c.age_layers_1y), 12).sum(
         axis=2
-    )  # getting annual incidence (rate per 100k)
+    ) 
+    # getting inc unadjusted
     inc_log = inc_log.reshape(len(c.health_states), len(c.age_layers_1y), 12).sum(
         axis=2
-    )  # getting inc unadjusted
+    )  
+    # getting mean annual prevalence
     prevalence = prevalence.reshape(
         len(c.health_states), len(c.age_layers_1y), 12
     ).mean(
         axis=2
-    )  # getting mean annual prevalence
+    ) 
     print("--------")
     print("after reshape:")
     print(f"inc_log.shape: {inc_log.shape}")
