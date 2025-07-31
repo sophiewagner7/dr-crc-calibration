@@ -3,3 +3,7 @@ __pycache__/
 
 # Malwarebytes logs (monitoring)
 %localappdata%/Malwarebytes/Logs/
+
+# SEER data (need registration)
+data/incidence_crude.xlsx
+data/s8*.csv
